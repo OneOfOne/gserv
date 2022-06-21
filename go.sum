@@ -19,6 +19,12 @@ go.oneofone.dev/genh v0.0.0-20220608195125-451317e3176f h1:UgdjAD6nvzkJI3wb7ENoT
 go.oneofone.dev/genh v0.0.0-20220608195125-451317e3176f/go.mod h1:el1FU/RGi8IizCwtBcZIJFDCqJ57KTnCmxyGIpuQwno=
 go.oneofone.dev/genh v0.0.0-20220617214356-d1398a0698b1 h1:1iu2Ek0lJuxBes/LxJodBml1doA4ChUbPP2wsO+bHYE=
 go.oneofone.dev/genh v0.0.0-20220617214356-d1398a0698b1/go.mod h1:TZwKW87ZaWsC68Q9ZZ1U+fPcPuvpHn+o9vV1BwLkk4Y=
+go.oneofone.dev/genh v0.0.0-20220621053227-baa844fe3207 h1:Qgx70BmYpo+98O0CdV4xa7yCTX63Z6V+JBt2FMF5uDk=
+go.oneofone.dev/genh v0.0.0-20220621053227-baa844fe3207/go.mod h1:TZwKW87ZaWsC68Q9ZZ1U+fPcPuvpHn+o9vV1BwLkk4Y=
+go.oneofone.dev/genh v0.0.0-20220621053337-c6ff79adcb7b h1:pYQTux+cYfw/aUpbCiJE4tsks+CAi+m3xvMDCvOIwuY=
+go.oneofone.dev/genh v0.0.0-20220621053337-c6ff79adcb7b/go.mod h1:TZwKW87ZaWsC68Q9ZZ1U+fPcPuvpHn+o9vV1BwLkk4Y=
+go.oneofone.dev/genh v0.0.0-20220621054320-7d6b1cbdca61 h1:dHAVaatZCae/XtAv0sNA1htYyBCKDpf1S28uw99Odoc=
+go.oneofone.dev/genh v0.0.0-20220621054320-7d6b1cbdca61/go.mod h1:TZwKW87ZaWsC68Q9ZZ1U+fPcPuvpHn+o9vV1BwLkk4Y=
 go.oneofone.dev/oerrs v1.0.6 h1:xI/DJUhjfBcOkpSAOPw/Rv3o4H8IRYMJI84XZtzYRkc=
 go.oneofone.dev/oerrs v1.0.6/go.mod h1:sZ3oKk6Q0lH/nCFex2EYdIZP87O8RouMNYvibMUSl9k=
 go.oneofone.dev/otk v1.0.7-0.20220531144415-25d6454ec911 h1:BVkCOhHJW1PqvLQJv+KIwxGKDiJeVdiqk7bO3wBNnLg=

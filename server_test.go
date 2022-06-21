@@ -166,8 +166,8 @@ func TestServer(t *testing.T) {
 				}
 
 				for i := range resp.Errors {
-					if re, te := resp.Errors[i], td.Errors[i]; re != te || !strings.HasSuffix(te.Error(), re.Error()) {
-						t.Fatalf("expected %+v, got %+v", te, re)
+					if re, te := resp.Errors[i], td.Errors[i]; !strings.HasPrefix(re.Error(), te.Error()) {
+						t.Fatalf("expected %q, got %q", te, re)
 					}
 				}
 			}

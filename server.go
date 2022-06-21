@@ -21,6 +21,11 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
+	resp := NewJSONErrorResponse(500, fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line))
+	ctx.Encode(nil, 500, resp)
+}
+
 var noopLogger = log.New(io.Discard, "", 0)
 
 // DefaultOpts are the default options used for creating new servers.
@@ -58,11 +63,8 @@ func NewWithOpts(opts *Options) *Server {
 	ro := srv.opts.RouterOptions
 	srv.r = router.New(ro)
 
-	if ro != nil && ro.CatchPanics {
-		srv.PanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
-			resp := NewJSONErrorResponse(500, fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line))
-			resp.WriteToCtx(ctx)
-		}
+	if srv.opts.CatchPanics {
+		srv.PanicHandler = DefaultPanicHandler
 	}
 
 	srv.r.NotFoundHandler = func(w http.ResponseWriter, req *http.Request, p router.Params) {

@@ -15,6 +15,7 @@ type Options struct {
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 
+	CatchPanics              bool
 	EnableDefaultHTTPLogging bool // disables the spam on disconnects and tls, it can hide important messages sometimes
 }
 
@@ -62,10 +63,7 @@ func SetRouterOptions(v *router.Options) Option {
 // SetNoCatchPanics toggles catching panics in handlers.
 func SetCatchPanics(enable bool) Option {
 	return func(opt *Options) {
-		if opt.RouterOptions == nil {
-			opt.RouterOptions = &router.Options{}
-		}
-		opt.RouterOptions.CatchPanics = enable
+		opt.CatchPanics = enable
 	}
 }
 

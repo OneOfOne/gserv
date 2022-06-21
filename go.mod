@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/gorilla/securecookie v1.1.1
-	go.oneofone.dev/genh v0.0.0-20220617214356-d1398a0698b1
+	go.oneofone.dev/genh v0.0.0-20220621054320-7d6b1cbdca61
 	go.oneofone.dev/oerrs v1.0.6
 	go.oneofone.dev/otk v1.0.7-0.20220615225005-5a3ffebd985f
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e

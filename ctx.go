@@ -1,7 +1,6 @@
 package gserv
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
@@ -13,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"go.oneofone.dev/genh"
 	"go.oneofone.dev/gserv/internal"
 	"go.oneofone.dev/gserv/router"
 	"go.oneofone.dev/oerrs"
@@ -45,7 +45,8 @@ type Context struct {
 	http.ResponseWriter
 	Req *http.Request
 
-	s *Server
+	s     *Server
+	Codec Codec
 
 	data   M
 	nextMW func()
@@ -143,7 +144,20 @@ func (ctx *Context) CloseBody() error {
 // BindJSON parses the request's body as json, and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindJSON(out any) error {
-	err := json.NewDecoder(ctx).Decode(out)
+	return ctx.Bind(JSONCodec{}, out)
+}
+
+// BindMsgpoack parses the request's body as msgpack, and closes the body.
+// Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
+func (ctx *Context) BindMsgpack(out any) error {
+	return ctx.Bind(MsgpCodec{}, out)
+}
+
+// BindMsgPack parses the request's body as msgpack, and closes the body.
+// Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
+func (ctx *Context) Bind(c Codec, out any) error {
+	c = genh.FirstNonZero(c, ctx.Codec, DefaultCodec)
+	err := c.Decode(ctx, out)
 	ctx.CloseBody()
 	return err
 }
@@ -169,18 +183,17 @@ func (ctx *Context) Printf(code int, contentType, s string, args ...any) (int, e
 // JSON outputs a json object, it is highly recommended to return *Response rather than use this directly.
 // calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) JSON(code int, indent bool, v any) error {
-	ctx.done = true
-	return ctx.Encode(code, JSONCodec{indent}, v)
+	return ctx.Encode(JSONCodec{indent}, code, v)
 }
 
 // Msgpack outputs a msgp object, it is highly recommended to return *Response rather than use this directly.
 // calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) Msgpack(code int, v any) error {
-	ctx.done = true
-	return ctx.Encode(code, MsgpCodec{}, v)
+	return ctx.Encode(MsgpCodec{}, code, v)
 }
 
-func (ctx *Context) Encode(code int, c Codec, v any) error {
+func (ctx *Context) Encode(c Codec, code int, v any) error {
+	c = genh.FirstNonZero(c, ctx.Codec, DefaultCodec)
 	ctx.done = true
 	ctx.SetContentType(c.ContentType())
 
