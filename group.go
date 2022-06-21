@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.oneofone.dev/gserv/router"
+	"go.oneofone.dev/oerrs"
 )
 
 type (
@@ -114,10 +115,23 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 		ctx = getCtx(rw, req, p, ghc.g.s)
 
 		mwIdx, hIdx int
+
+		catchPanic func()
 	)
 	defer putCtx(ctx)
 
+	if ph := ghc.g.s.PanicHandler; ph != nil {
+		catchPanic = func() {
+			if v := recover(); v != nil {
+				fr := oerrs.Caller(2)
+				ghc.g.s.PanicHandler(ctx, v, fr)
+			}
+		}
+	}
 	ctx.nextMW = func() {
+		if catchPanic != nil {
+			defer catchPanic()
+		}
 		for mwIdx < len(ghc.g.mw) && !ctx.done {
 			h := ghc.g.mw[mwIdx]
 			mwIdx++
@@ -134,6 +148,9 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 	}
 
 	ctx.next = func() {
+		if catchPanic != nil {
+			defer catchPanic()
+		}
 		for hIdx < len(ghc.hc) && !ctx.done {
 			h := ghc.hc[hIdx]
 			hIdx++

@@ -9,10 +9,10 @@ import (
 
 // Handler is what handler looks like, duh?
 // *note* `p` is NOT safe to be used outside the handler, call p.Copy() if you need to use it.
-type Handler func(w http.ResponseWriter, req *http.Request, p Params)
+type Handler = func(w http.ResponseWriter, req *http.Request, p Params)
 
 // PanicHandler is a special handler that gets called if a panic happens
-type PanicHandler func(w http.ResponseWriter, req *http.Request, v any)
+type PanicHandler = func(w http.ResponseWriter, req *http.Request, v any)
 
 // DefaultPanicHandler is the default panic handler
 func DefaultPanicHandler(w http.ResponseWriter, req *http.Request, v any) {

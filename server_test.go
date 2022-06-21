@@ -27,7 +27,7 @@ var testData = []struct {
 	{"/ping", NewJSONResponse("pong")},
 	{"/ping/world", NewJSONResponse("pong:world")},
 	{"/random", NewJSONErrorResponse(404)},
-	// {"/panic", NewJSONErrorResponse(http.StatusInternalServerError, strings.Repeat("PANIC (string): well... poo\n", 10))},
+	{"/panic", NewJSONErrorResponse(http.StatusInternalServerError, "PANIC in GET /panic: well... poo", "at go.oneofone.dev/gserv.TestServer.func2")},
 	{"/mw/sub", NewJSONResponse("data:test")},
 }
 
@@ -94,6 +94,11 @@ func TestServer(t *testing.T) {
 		srv = New(SetCatchPanics(true), SetErrLogger(nil)) // don't need the spam with panics for the /panic handler
 	}
 
+	// srv.PanicHandler = func(ctx *Context, v any) {
+	// 	r := NewJSONErrorResponse(500, fmt.Sprintf("PANIC (%T): %v\n", v, v))
+	// 	r.WriteToCtx(ctx)
+	// }
+
 	JSONGet(&srv.Group, "/ping", func(ctx *Context) (string, error) {
 		// ctx.Logf("you wut m8: %v", ctx.ReqHeader())
 		return "pong", nil
@@ -145,7 +150,6 @@ func TestServer(t *testing.T) {
 				t.Error(td.path, err)
 			}
 			b, _ := io.ReadAll(res.Body)
-			t.Logf("%s", res.Header)
 			err = json.NewDecoder(bytes.NewReader(b)).Decode(&resp)
 			res.Body.Close()
 			if err != nil {
@@ -158,12 +162,12 @@ func TestServer(t *testing.T) {
 
 			if len(resp.Errors) > 0 {
 				if len(resp.Errors) != len(td.Errors) {
-					t.Errorf("expected (%s) %+v, got %+v", td.path, td.JSONResponse, resp)
+					t.Fatalf("expected (%s) %+v, got %+v", td.path, td.JSONResponse, resp)
 				}
 
 				for i := range resp.Errors {
-					if re, te := resp.Errors[i], td.Errors[i]; re != te {
-						t.Errorf("expected %+v, got %+v", te, re)
+					if re, te := resp.Errors[i], td.Errors[i]; re != te || !strings.HasSuffix(te.Error(), re.Error()) {
+						t.Fatalf("expected %+v, got %+v", te, re)
 					}
 				}
 			}
