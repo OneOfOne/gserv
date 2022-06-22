@@ -12,12 +12,12 @@ const (
 	ErrNoListener = oerrs.String("no registered listener")
 )
 
-type dataChan chan []byte
+type dataChan = chan []byte
 
 type multiStream struct {
 	clients map[dataChan]struct{}
 	mux     sync.Mutex
-	data    chan []byte
+	data    dataChan
 }
 
 func (ms *multiStream) add(ch dataChan) {

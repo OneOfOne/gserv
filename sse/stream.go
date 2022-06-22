@@ -34,6 +34,7 @@ func NewStream(ctx *gserv.Context, bufSize int) (lastEventID string, ss *Stream,
 	h := ctx.Header()
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache")
+	ctx.Flush()
 
 	ss = &Stream{
 		wch:  make(chan []byte, bufSize),

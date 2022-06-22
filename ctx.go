@@ -55,9 +55,9 @@ type Context struct {
 	ReqQuery url.Values
 	Params   router.Params
 
-	status             int
-	hijackServeContent bool
-	done               bool
+	status   int
+	hijackSC bool
+	done     bool
 }
 
 // Param is a shorthand for ctx.Params.Get(name).
@@ -100,7 +100,7 @@ func (ctx *Context) WriteReader(contentType string, r io.Reader) (int64, error) 
 // File serves a file using http.ServeContent.
 // See http.ServeContent.
 func (ctx *Context) File(fp string) error {
-	ctx.hijackServeContent = true
+	ctx.hijackSC = true
 	http.ServeFile(ctx, ctx.Req, fp)
 
 	return nil
@@ -147,7 +147,7 @@ func (ctx *Context) BindJSON(out any) error {
 	return ctx.Bind(JSONCodec{}, out)
 }
 
-// BindMsgpoack parses the request's body as msgpack, and closes the body.
+// BindMsgpack parses the request's body as msgpack, and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindMsgpack(out any) error {
 	return ctx.Bind(MsgpCodec{}, out)
@@ -256,7 +256,7 @@ func (ctx *Context) Next() {
 // without them we'd end up with plain text errors, we wouldn't want that, would we?
 // WriteHeader implements http.ResponseWriter
 func (ctx *Context) WriteHeader(s int) {
-	if ctx.status = s; ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
+	if ctx.status = s; ctx.hijackSC && ctx.status >= http.StatusBadRequest {
 		return
 	}
 
@@ -265,8 +265,8 @@ func (ctx *Context) WriteHeader(s int) {
 
 // Write implements http.ResponseWriter
 func (ctx *Context) Write(p []byte) (int, error) {
-	if ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
-		ctx.hijackServeContent = false
+	if ctx.hijackSC && ctx.status >= http.StatusBadRequest {
+		ctx.hijackSC = false
 		NewJSONErrorResponse(ctx.status, p).WriteToCtx(ctx)
 		return len(p), nil
 	}
