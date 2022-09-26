@@ -1,6 +1,9 @@
 package router
 
-import "strings"
+import (
+	"encoding/json"
+	"strings"
+)
 
 type Swagger struct {
 	OpenAPI string          `json:"openAPI,omitempty" yaml:"openAPI,omitempty"`
@@ -84,7 +87,7 @@ func (sr *SwaggerRoute) WithTags(v ...string) *SwaggerRoute {
 	return sr
 }
 
-func (sr *SwaggerRoute) WithBody(contentType string, ex string) *SwaggerRoute {
+func (sr *SwaggerRoute) WithBody(contentType string, example any) *SwaggerRoute {
 	if sr.RequestBody == nil {
 		sr.RequestBody = &SwaggerRequestBody{}
 	}
@@ -98,7 +101,16 @@ func (sr *SwaggerRoute) WithBody(contentType string, ex string) *SwaggerRoute {
 		v = &SwaggerRequestBodyContent{}
 		rbc[contentType] = v
 	}
-	v.Example = ex
+	switch ex := example.(type) {
+	case string:
+		v.Example = ex
+	default:
+		b, err := json.MarshalIndent(ex, "", "\t")
+		if err != nil {
+			panic(err)
+		}
+		v.Example = string(b)
+	}
 	return sr
 }
 
