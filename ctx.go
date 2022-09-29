@@ -43,7 +43,8 @@ const (
 // it is not thread safe and should never be used outside the handler
 type Context struct {
 	http.ResponseWriter
-	Req *http.Request
+	Req          *http.Request
+	bytesWritten int
 
 	s     *Server
 	Codec Codec
@@ -303,6 +304,7 @@ func (ctx *Context) WriteHeader(s int) {
 		return
 	}
 
+	ctx.bytesWritten += 3 // 3 chars in status codes: 200, 400, 500, etc
 	ctx.ResponseWriter.WriteHeader(s)
 }
 
@@ -315,7 +317,13 @@ func (ctx *Context) Write(p []byte) (int, error) {
 	}
 
 	ctx.done = true
+	ctx.bytesWritten += len(p)
 	return ctx.ResponseWriter.Write(p)
+}
+
+// BytesWritten is the amount of bytes written from the body.
+func (ctx *Context) BytesWritten() int {
+	return ctx.bytesWritten
 }
 
 // Write implements io.StringWriter
