@@ -303,8 +303,7 @@ func (ctx *Context) WriteHeader(s int) {
 	if ctx.status = s; ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
 		return
 	}
-
-	ctx.bytesWritten += 3 // 3 chars in status codes: 200, 400, 500, etc
+	
 	ctx.ResponseWriter.WriteHeader(s)
 }
 
