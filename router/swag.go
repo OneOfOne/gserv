@@ -144,24 +144,8 @@ func (sr *SwaggerRoute) WithExample(name string, ex *SwaggerDesc) *SwaggerRoute 
 	return sr
 }
 
-func (sr *SwaggerRoute) WithParams(params []*SwaggerParamInput) *SwaggerRoute {
-	for _, p := range params {
-		var schema map[string]string
-		if p.Schema != "" {
-			schema = make(map[string]string)
-			schema["$ref"] = "#/definitions/" + p.Schema
-		}
-		sr.Parameters = append(sr.Parameters, &SwaggerParam{
-			Name:            p.Name,
-			In:              p.In,
-			Description:     p.Description,
-			Type:            p.Type,
-			Schema:          schema,
-			Required:        p.Required,
-			Deprecated:      p.Deprecated,
-			AllowEmptyValue: p.AllowEmptyValue,
-		})
-	}
+func (sr *SwaggerRoute) WithParams(params []*SwaggerParam) *SwaggerRoute {
+	sr.Parameters = append(sr.Parameters, params...)
 	return sr
 }
 

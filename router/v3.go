@@ -89,7 +89,7 @@ func (n *Route) WithDoc(desc string, genParams bool) *SwaggerRoute {
 	if genParams {
 		for _, p := range n.parts {
 			if p[0] == ':' || p[0] == '*' {
-				sr = sr.WithParam(p.Name(), p.String()+" is required", "path", "string", true, "")
+				sr = sr.WithParam(p.Name(), p.String()+" is required", "path", "string", true, nil)
 			}
 		}
 	}
