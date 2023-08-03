@@ -69,7 +69,7 @@ var (
 
 // ApplyHeaders is a middle to apply a static set of headers to an gserv.Context
 func ApplyHeaders(headerMaps ...SHM) gserv.Handler {
-	return func(ctx *gserv.Context) gserv.Response {
+	return func(ctx *gserv.Context) error {
 		ch := ctx.Header()
 		for _, hm := range headerMaps {
 			hm.Apply(ch, false)

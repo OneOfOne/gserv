@@ -2,7 +2,6 @@ package router
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -95,7 +94,9 @@ type headRW struct {
 	http.ResponseWriter
 }
 
-func (w *headRW) Write(p []byte) (int, error) { return ioutil.Discard.Write(p) }
+func (w *headRW) Write(p []byte) (int, error) {
+	return len(p), nil
+}
 
 func pathNoQuery(p string) string {
 	if idx := strings.IndexByte(p, '?'); idx != -1 {

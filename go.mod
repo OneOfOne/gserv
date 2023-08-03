@@ -6,7 +6,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/securecookie v1.1.1
 	go.oneofone.dev/genh v0.0.0-20230201195704-e48800481016
-	go.oneofone.dev/msgpack/v5 v5.3.7
 	go.oneofone.dev/oerrs v1.0.6
 	go.oneofone.dev/otk v1.0.7
 	golang.org/x/crypto v0.6.0

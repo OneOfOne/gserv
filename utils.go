@@ -23,7 +23,7 @@ func HTTPHandler(h http.Handler) Handler {
 
 // FromHTTPHandlerFunc returns a Handler from an http.Handler.
 func HTTPHandlerFunc(h http.HandlerFunc) Handler {
-	return func(ctx *Context) Response {
+	return func(ctx *Context) error {
 		h(ctx, ctx.Req)
 		return nil
 	}
@@ -60,7 +60,7 @@ func StaticDirWithLimit(dir, paramName string, limit int) Handler {
 		sem = make(chan struct{}, limit)
 	}
 
-	return func(ctx *Context) Response {
+	return func(ctx *Context) error {
 		path := ctx.Param(paramName)
 		if sem != nil {
 			sem <- e
@@ -111,7 +111,7 @@ func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler 
 		om[orig] = true
 	}
 
-	fn := func(ctx *Context) (_ Response) {
+	fn := func(ctx *Context) (_ error) {
 		rh, wh := ctx.Req.Header, ctx.Header()
 		origin := rh.Get("Origin")
 

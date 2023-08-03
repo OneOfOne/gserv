@@ -57,3 +57,7 @@ func NewErrorWithCaller(status int, msg string, skip int) HTTPError {
 }
 func (e Error) Status() int   { return e.Code }
 func (e Error) Error() string { return e.Message }
+
+func (e Error) WriteToCtx(ctx *Context) error {
+	return ctx.Encode(NewJSONErrorResponse(e.Code, e))
+}

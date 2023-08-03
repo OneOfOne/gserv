@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -18,7 +17,7 @@ var reqID uint64
 // LogRequests is a request logger middleware.
 // If logJSONRequests is true, it'll attempt to parse the incoming request's body and output it to the log.
 func LogRequests(logJSONRequests bool) Handler {
-	return func(ctx *Context) Response {
+	return func(ctx *Context) error {
 		var (
 			req   = ctx.Req
 			url   = req.URL
@@ -33,7 +32,7 @@ func LogRequests(logJSONRequests bool) Handler {
 				var buf bytes.Buffer
 				io.Copy(&buf, req.Body)
 				req.Body.Close()
-				req.Body = ioutil.NopCloser(&buf)
+				req.Body = io.NopCloser(&buf)
 				j, _ := internal.Marshal(req.Header)
 				if ln := buf.Len(); ln > 0 {
 					switch buf.Bytes()[0] {
@@ -74,7 +73,7 @@ const secureCookieKey = ":SC:"
 // SecureCookie is a middleware to enable SecureCookies.
 // For more details check `go doc securecookie.New`
 func SecureCookie(hashKey, blockKey []byte) Handler {
-	return func(ctx *Context) Response {
+	return func(ctx *Context) error {
 		ctx.Set(secureCookieKey, securecookie.New(hashKey, blockKey))
 		return nil
 	}

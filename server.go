@@ -25,7 +25,7 @@ var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
 	msg, info := fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line)
 	ctx.Logf("%s (%s)", msg, info)
 	resp := NewJSONErrorResponse(500, msg, info)
-	ctx.Encode(500, resp)
+	ctx.Encode(resp)
 }
 
 var noopLogger = log.New(io.Discard, "", 0)
@@ -163,8 +163,8 @@ type CertPair struct {
 	KeyFile  string `json:"KeyFile"`
 }
 
-// SetKeepAlivesEnabled controls whether HTTP keep-alives are enabled.
-// By default, keep-alives are always enabled.
+// SetKeepAlivesEnabled controls whether HTTP keep-alive is enabled.
+// By default, keep-alive is always enabled.
 func (s *Server) SetKeepAlivesEnabled(v bool) {
 	s.serversMux.Lock()
 	for _, srv := range s.servers {

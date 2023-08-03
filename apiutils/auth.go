@@ -12,10 +12,9 @@ import (
 )
 
 type (
-	// MapClaims is an alias for jwt.MapClaims
 	MapClaims = jwt.MapClaims
-	// StandardClaims is an alias for jwt.StandardClaims
-	StandardClaims = jwt.StandardClaims
+
+	RegisteredClaims = jwt.RegisteredClaims
 
 	// TokenKeyFunc is a callback to return a key for the given token
 	TokenKeyFunc = func(ctx *gserv.Context, tok Token) (extra gserv.M, key any, err error)
