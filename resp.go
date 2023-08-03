@@ -27,7 +27,7 @@ var (
 	// Break can be returned from a handler to break a handler chain.
 	// It doesn't write anything to the connection.
 	// if you reassign this, a wild animal will devour your face.
-	Break Response = &cachedResp{code: -1}
+	Break error = oerrs.String("break")
 )
 
 // Response represents a generic return type for http responses.

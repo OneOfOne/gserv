@@ -16,7 +16,7 @@ var DefaultCodec Codec = &JSONCodec{}
 
 // Handler is the default server Handler
 // In a handler chain, returning a non-nil breaks the chain.
-type Handler = func(ctx *Context) Response
+type Handler = func(ctx *Context) error
 
 type Group struct {
 	s    *Server
@@ -83,9 +83,8 @@ func (g *Group) Static(path, localPath string, allowListing bool) Route {
 }
 
 func (g *Group) StaticFile(path, localPath string) Route {
-	return g.AddRoute(http.MethodGet, path, func(ctx *Context) Response {
-		ctx.File(localPath)
-		return nil
+	return g.AddRoute(http.MethodGet, path, func(ctx *Context) error {
+		return ctx.File(localPath)
 	})
 }
 
@@ -129,7 +128,7 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 	)
 	defer putCtx(ctx)
 
-	if ph := ghc.g.s.PanicHandler; ph != nil {
+	if ph := ghc.g.s.PanicHandler; ph != nil && ghc.g.s.opts.CatchPanics {
 		catchPanic = func() {
 			if v := recover(); v != nil {
 				fr := oerrs.Caller(2)
@@ -144,11 +143,11 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 		for mwIdx < len(ghc.g.mw) && !ctx.done {
 			h := ghc.g.mw[mwIdx]
 			mwIdx++
-			if r := h(ctx); r != nil {
-				if r != Break {
-					r.WriteToCtx(ctx)
-				} else {
+			if err := h(ctx); err != nil {
+				if err == Break {
 					ctx.next = nil
+				} else if !ctx.done {
+					ctx.Encode(getError(http.StatusInternalServerError, err))
 				}
 				break
 			}
@@ -163,9 +162,9 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 		for hIdx < len(ghc.hc) && !ctx.done {
 			h := ghc.hc[hIdx]
 			hIdx++
-			if r := h(ctx); r != nil {
-				if r != Break {
-					r.WriteToCtx(ctx)
+			if err := h(ctx); err != nil {
+				if err != Break && !ctx.done {
+					ctx.Encode(getError(http.StatusInternalServerError, err))
 				}
 				break
 			}

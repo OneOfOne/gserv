@@ -119,9 +119,12 @@ func (m MixedCodec[Dec, Enc]) Encode(w io.Writer, v any) error {
 	return m.enc.Encode(w, v)
 }
 
-func getError(err error) HTTPError {
+func getError(code int, err error) HTTPError {
 	if err, ok := err.(HTTPError); ok {
 		return err
 	}
-	return &Error{Code: http.StatusBadRequest, Message: err.Error()}
+	if code == 0 {
+		code = http.StatusBadRequest
+	}
+	return &Error{Code: code, Message: err.Error()}
 }

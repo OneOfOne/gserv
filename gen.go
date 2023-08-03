@@ -75,20 +75,19 @@ func handleOutOnly[CodecT Codec, Resp any, HandlerFn func(ctx *Context) (resp Re
 	var resp Resp
 	_, respBytes := any(resp).([]byte)
 
-	return g.AddRoute(method, path, func(ctx *Context) Response {
+	return g.AddRoute(method, path, func(ctx *Context) error {
 		resp, err := handler(ctx)
 		if err != nil {
 			return handleError[CodecT](ctx, err, wrapResp)
 		}
 		if wrapResp {
-			return NewResponse[CodecT](resp)
+			return NewResponse[CodecT](resp).WriteToCtx(ctx)
 		}
 		if respBytes {
-			ctx.Write(any(resp).([]byte))
-			return nil
+			_, err := ctx.Write(any(resp).([]byte))
+			return err
 		}
-		c.Encode(ctx, resp)
-		return nil
+		return c.Encode(ctx, resp)
 	})
 }
 
@@ -98,7 +97,7 @@ func handleInOut[CodecT Codec, Req, Resp any, HandlerFn func(ctx *Context, reqBo
 	var resp Resp
 	_, reqBytes := any(req).([]byte)
 	_, respBytes := any(resp).([]byte)
-	return g.AddRoute(method, path, func(ctx *Context) Response {
+	return g.AddRoute(method, path, func(ctx *Context) error {
 		var body Req
 		if reqBytes {
 			b, err := io.ReadAll(ctx.Req.Body)
@@ -116,24 +115,22 @@ func handleInOut[CodecT Codec, Req, Resp any, HandlerFn func(ctx *Context, reqBo
 			return handleError[CodecT](ctx, err, wrapResp)
 		}
 		if wrapResp {
-			return NewResponse[CodecT](resp)
+			return NewResponse[CodecT](resp).WriteToCtx(ctx)
 		}
 		if respBytes {
-			ctx.Write(any(resp).([]byte))
-			return nil
+			_, err := ctx.Write(any(resp).([]byte))
+			return err
 		}
-		c.Encode(ctx, resp)
-		return nil
+		return c.Encode(ctx, resp)
 	})
 }
 
-func handleError[C Codec](ctx *Context, e error, wrapResp bool) Response {
+func handleError[C Codec](ctx *Context, e error, wrapResp bool) error {
 	var c C
-	err := getError(e)
+	err := getError(500, e)
 	if wrapResp {
-		return NewErrorResponse[C](err.Status(), err)
+		return ctx.Encode(NewErrorResponse[C](err.Status(), err))
 	}
 	ctx.WriteHeader(err.Status())
-	c.Encode(ctx, getError(err))
-	return nil
+	return c.Encode(ctx, err)
 }

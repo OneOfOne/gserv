@@ -43,22 +43,20 @@ const (
 // it is not thread safe and should never be used outside the handler
 type Context struct {
 	http.ResponseWriter
-	Req          *http.Request
-	bytesWritten int
-
-	s     *Server
 	Codec Codec
 
-	data   M
-	nextMW func()
-	next   func()
+	nextMW       func()
+	s            *Server
+	data         M
+	Req          *http.Request
+	next         func()
+	ReqQuery     url.Values
+	Params       router.Params
+	bytesWritten int
+	status       int
+	done         bool
 
-	ReqQuery url.Values
-	Params   router.Params
-
-	status             int
 	hijackServeContent bool
-	done               bool
 }
 
 func (ctx *Context) Route() *router.Route {
@@ -155,7 +153,7 @@ func (ctx *Context) BindJSON(out any) error {
 	return ctx.BindCodec(JSONCodec{}, out)
 }
 
-// BindMsgpoack parses the request's body as msgpack, and closes the body.
+// BindMsgpack parses the request's body as msgpack, and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindMsgpack(out any) error {
 	return ctx.BindCodec(MsgpCodec{}, out)
@@ -233,7 +231,15 @@ func (ctx *Context) EncodeCodec(c Codec, code int, v any) error {
 	return c.Encode(ctx, v)
 }
 
-func (ctx *Context) Encode(code int, v any) error {
+func (ctx *Context) Encode(v any) error {
+	return ctx.EncodeWithCode(0, v)
+}
+
+func (ctx *Context) EncodeWithCode(code int, v any) error {
+	if v, ok := v.(hasWriteToCtx); ok {
+		return v.WriteToCtx(ctx)
+	}
+
 	var c Codec
 	ct := ctx.ContentType()
 	switch {
@@ -456,6 +462,13 @@ func (ctx *Context) GetCookieValue(name string, valDst any) error {
 	}
 
 	return internal.UnmarshalString(c.Value, valDst)
+}
+
+func (ctx *Context) NoCompression() {
+	if g, ok := ctx.ResponseWriter.(*gzipRW); ok {
+		ctx.ResponseWriter = g.ResponseWriter
+		g.Reset()
+	}
 }
 
 func (ctx *Context) Logf(format string, v ...any) {

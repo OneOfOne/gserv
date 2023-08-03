@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -28,6 +28,7 @@ var testData = []struct {
 	{"/ping", NewJSONResponse("pong")},
 	{"/ping/world", NewJSONResponse("pong:world")},
 	{"/random", NewJSONErrorResponse(404)},
+	{"/error", NewJSONErrorResponse(http.StatusInternalServerError, io.EOF)},
 	{"/panic", NewJSONErrorResponse(http.StatusInternalServerError, "PANIC in GET /panic: well... poo", "at go.oneofone.dev/gserv.TestServer.func2")},
 	{"/panic2", NewJSONErrorResponse(http.StatusInternalServerError, "PANIC in GET /panic2: well... poo", "at go.oneofone.dev/gserv.panicTyped")},
 	{"/mw/sub/id", NewJSONResponse("data:/mw/sub/:id")},
@@ -111,12 +112,16 @@ func TestServer(t *testing.T) {
 		return "pong", nil
 	}, true)
 
-	srv.GET("/panic", func(ctx *Context) Response {
+	srv.GET("/panic", func(ctx *Context) error {
 		panic("well... poo")
 	})
 
 	JSONGet(srv, "/panic2", panicTyped, true)
 	srv.AllowCORS("/cors", "GET")
+
+	srv.GET("/error", func(ctx *Context) error {
+		return io.EOF
+	})
 
 	JSONGet(srv, "/ping/:id", func(ctx *Context) (string, error) {
 		return "pong:" + ctx.Params.Get("id"), nil
@@ -142,7 +147,7 @@ func TestServer(t *testing.T) {
 
 	srv.StaticFile("/README.md", "./router/README.md")
 
-	sg := srv.SubGroup("groupName", "/mw", func(ctx *Context) Response {
+	sg := srv.SubGroup("groupName", "/mw", func(ctx *Context) error {
 		r := ctx.Route()
 		if r == nil {
 			t.Fatal("couldn't get route from request")
@@ -150,14 +155,14 @@ func TestServer(t *testing.T) {
 		ctx.Set("data", r.Path())
 		return nil
 	})
-	sg.GET("/sub/:id", func(ctx *Context) Response {
+	sg.GET("/sub/:id", func(ctx *Context) error {
 		v, _ := ctx.Get("data").(string)
-		return NewJSONResponse("data:" + v)
+		return ctx.Encode(NewJSONResponse("data:" + v))
 	})
 
-	sg.GET("/sub/disabled/:id", func(ctx *Context) Response {
+	sg.GET("/sub/disabled/:id", func(ctx *Context) error {
 		v, _ := ctx.Get("data").(string)
-		return NewJSONResponse("data:" + v)
+		return ctx.Encode(NewJSONResponse("data:" + v))
 	})
 
 	if !srv.DisableRoute("GET", "/mw/sub/disabled/:id", true) {
@@ -185,6 +190,10 @@ func TestServer(t *testing.T) {
 				t.Error(td.path, err)
 			}
 
+			if td.path == "/error" {
+				t.Log(string(b))
+			}
+
 			if resp.Code != td.Code || !cmpData(resp.Data, td.Data) {
 				t.Errorf("expected (%s) (%v) %#+v, got (%v) %#+v", td.path, td.Code, td.Data, resp.Code, resp.Data)
 			}
@@ -204,13 +213,13 @@ func TestServer(t *testing.T) {
 	}
 
 	t.Run("Static", func(t *testing.T) {
-		readme, _ := ioutil.ReadFile("./router/README.md")
+		readme, _ := os.ReadFile("./router/README.md")
 		res, err := http.Get(ts.URL + "/s/router/README.md")
 		if err != nil {
 			t.Error(err)
 		}
 
-		b, err := ioutil.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			t.Error(err)
@@ -226,7 +235,7 @@ func TestServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		b, err = ioutil.ReadAll(res.Body)
+		b, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			t.Error(err)
@@ -242,7 +251,7 @@ func TestServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		b, err = ioutil.ReadAll(res.Body)
+		b, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			t.Error(err)
@@ -258,7 +267,7 @@ func TestServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		b, err = ioutil.ReadAll(res.Body)
+		b, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			t.Error(err)
@@ -274,7 +283,7 @@ func TestServer(t *testing.T) {
 			t.Error(err)
 		}
 
-		b, err = ioutil.ReadAll(res.Body)
+		b, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			t.Error(err)

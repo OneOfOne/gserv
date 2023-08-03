@@ -27,25 +27,25 @@ func TestSSE(t *testing.T) {
 	done := make(chan struct{}, 1)
 	sr := sse.NewRouter()
 
-	srv.GET("/sse/:id", func(ctx *gserv.Context) gserv.Response {
+	srv.GET("/sse/:id", func(ctx *gserv.Context) error {
 		log.Println("new connection", ctx.Req.RemoteAddr)
 		sr.Handle(ctx.Param("id"), 10, ctx)
 		return nil
 	})
 
-	srv.GET("/send/:id", func(ctx *gserv.Context) gserv.Response {
+	srv.GET("/send/:id", func(ctx *gserv.Context) error {
 		log.Println("new connection", ctx.Req.RemoteAddr)
 		sr.Send(ctx.Param("id"), time.Now().String(), "", ctx.Query("m"))
 		ctx.WriteHeader(http.StatusNoContent)
 		return nil
 	})
 
-	srv.GET("/close", func(ctx *gserv.Context) gserv.Response {
+	srv.GET("/close", func(ctx *gserv.Context) error {
 		close(done)
 		return nil
 	})
 
-	srv.GET("/", func(ctx *gserv.Context) gserv.Response {
+	srv.GET("/", func(ctx *gserv.Context) error {
 		ctx.Write([]byte(page))
 		return nil
 	})

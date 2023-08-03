@@ -8,6 +8,10 @@ import (
 	"go.oneofone.dev/oerrs"
 )
 
+type hasWriteToCtx interface {
+	WriteToCtx(ctx *Context) error
+}
+
 func NewResponse[CodecT Codec](data any) *GenResponse[CodecT] {
 	return &GenResponse[CodecT]{
 		Code:    http.StatusOK,
@@ -50,14 +54,13 @@ type GenResponse[CodecT Codec] struct {
 }
 
 func (r GenResponse[CodecT]) Status() int {
-	if r.Code == 0 {
-		if len(r.Errors) > 0 {
-			return http.StatusBadRequest
-		} else {
-			return http.StatusOK
-		}
+	if r.Code != 0 {
+		return r.Code
 	}
-	return r.Code
+	if len(r.Errors) > 0 {
+		return http.StatusBadRequest
+	}
+	return http.StatusOK
 }
 
 // WriteToCtx writes the response to a ResponseWriter
