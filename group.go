@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"go.oneofone.dev/gserv/router"
 	"go.oneofone.dev/oerrs"
+
+	"go.oneofone.dev/gserv/router"
 )
 
 type (
@@ -111,7 +112,7 @@ func joinPath(p1, p2 string) string {
 	if p2 != "" && p2[0] != '/' {
 		p2 = "/" + p2
 	}
-	return strings.Replace(p1+p2, "//", "/", -1)
+	return strings.ReplaceAll(p1+p2, "//", "/")
 }
 
 type groupHandlerChain struct {
