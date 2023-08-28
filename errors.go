@@ -51,6 +51,7 @@ func NewErrorWithCaller(status int, msg string, skip int) HTTPError {
 	if skip > 0 {
 		var c callerInfo
 		c.Func, c.File, c.Line = otk.Caller(1+skip, true)
+		e.Caller = &c
 	}
 
 	return e

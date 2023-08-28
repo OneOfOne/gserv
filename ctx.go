@@ -1,6 +1,7 @@
 package gserv
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"mime"
@@ -13,16 +14,18 @@ import (
 	"time"
 
 	"go.oneofone.dev/genh"
-	"go.oneofone.dev/gserv/internal"
-	"go.oneofone.dev/gserv/router"
 	"go.oneofone.dev/oerrs"
 	"go.oneofone.dev/otk"
+
+	"go.oneofone.dev/gserv/internal"
+	"go.oneofone.dev/gserv/router"
 )
 
 var (
 	_ http.ResponseWriter = (*Context)(nil)
 	_ http.Flusher        = (*Context)(nil)
 	_ io.StringWriter     = (*Context)(nil)
+	_ context.Context     = (*Context)(nil)
 )
 
 const (
@@ -43,19 +46,19 @@ const (
 // it is not thread safe and should never be used outside the handler
 type Context struct {
 	http.ResponseWriter
-	Req          *http.Request
-	bytesWritten int
-
-	s     *Server
+	Req   *http.Request
 	Codec Codec
 
-	data   M
+	data map[any]any
+	s    *Server
+
 	nextMW func()
 	next   func()
 
 	ReqQuery url.Values
 	Params   router.Params
 
+	bytesWritten       int
 	status             int
 	hijackServeContent bool
 	done               bool
@@ -89,9 +92,9 @@ func (ctx *Context) Get(key string) any {
 }
 
 // Set sets a context value, useful in passing data to other handlers down the chain
-func (ctx *Context) Set(key string, val any) {
+func (ctx *Context) Set(key, val any) {
 	if ctx.data == nil {
-		ctx.data = make(M)
+		ctx.data = make(map[any]any)
 	}
 	ctx.data[key] = val
 }
@@ -373,9 +376,6 @@ func (ctx *Context) MultipartReader() (*multipart.Reader, error) {
 	return multipart.NewReader(req.Body, boundary), nil
 }
 
-// Done returns wither the context is marked as done or not.
-func (ctx *Context) Done() bool { return ctx.done }
-
 // SetCookie sets an http-only cookie using the passed name, value and domain.
 // Returns an error if there was a problem encoding the value.
 // if forceSecure is true, it will set the Secure flag to true, otherwise it sets it based on the connection.
@@ -458,6 +458,23 @@ func (ctx *Context) GetCookieValue(name string, valDst any) error {
 	return internal.UnmarshalString(c.Value, valDst)
 }
 
+func (ctx *Context) NoCompression() {
+	if g, ok := ctx.ResponseWriter.(*gzipRW); ok {
+		ctx.ResponseWriter = g.ResponseWriter
+		g.Reset()
+	}
+}
+
+func (ctx *Context) Deadline() (time.Time, bool) { return ctx.Req.Context().Deadline() }
+func (ctx *Context) Done() <-chan struct{}       { return ctx.Req.Context().Done() }
+func (ctx *Context) Err() error                  { return ctx.Req.Context().Err() }
+func (ctx *Context) Value(key any) any {
+	if v, ok := ctx.data[key]; ok {
+		return v
+	}
+	return ctx.Req.Context().Value(key)
+}
+
 func (ctx *Context) Logf(format string, v ...any) {
 	ctx.s.logfStack(1, format, v...)
 }
@@ -469,7 +486,7 @@ func (ctx *Context) LogSkipf(skip int, format string, v ...any) {
 var ctxPool = sync.Pool{
 	New: func() any {
 		return &Context{
-			data: M{},
+			data: map[any]any{},
 		}
 	},
 }
