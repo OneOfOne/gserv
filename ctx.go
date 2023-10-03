@@ -122,7 +122,7 @@ func (ctx *Context) Path() string {
 	return ctx.Req.URL.EscapedPath()
 }
 
-// SetContentType sets the responses's content-type.
+// SetContentType sets the response's content-type.
 func (ctx *Context) SetContentType(typ string) {
 	if typ == "" {
 		return
