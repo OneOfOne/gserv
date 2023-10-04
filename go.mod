@@ -9,7 +9,7 @@ require (
 	go.oneofone.dev/oerrs v1.0.6
 	go.oneofone.dev/otk v1.0.7
 	golang.org/x/crypto v0.13.0
-	golang.org/x/net v0.15.0
+	golang.org/x/net v0.15.1-0.20231003175844-350aad2603e5
 )
 
 require (

@@ -18,6 +18,18 @@ import (
 // certCacheDir is where the certificates will be cached, defaults to "./autocert".
 // Note that it must always run on *BOTH* ":80" and ":443" so the addr param is omitted.
 func (s *Server) RunAutoCert(ctx context.Context, certCacheDir string, domains ...string) error {
+	var hbFn autocert.HostPolicy
+	if len(domains) > 0 {
+		hbFn = autocert.HostWhitelist(domains...)
+	}
+
+	return s.RunAutoCertDyn(ctx, certCacheDir, hbFn)
+}
+
+// RunAutoCertDyn enables automatic support for LetsEncrypt, using a dynamic HostPolicy.
+// certCacheDir is where the certificates will be cached, defaults to "./autocert".
+// Note that it must always run on *BOTH* ":80" and ":443" so the addr param is omitted.
+func (s *Server) RunAutoCertDyn(ctx context.Context, certCacheDir string, hpFn autocert.HostPolicy) error {
 	if certCacheDir == "" {
 		certCacheDir = "./autocert"
 	}
@@ -27,12 +39,9 @@ func (s *Server) RunAutoCert(ctx context.Context, certCacheDir string, domains .
 	}
 
 	m := &autocert.Manager{
-		Prompt: autocert.AcceptTOS,
-		Cache:  autocert.DirCache(certCacheDir),
-	}
-
-	if len(domains) > 0 {
-		m.HostPolicy = autocert.HostWhitelist(domains...)
+		Prompt:     autocert.AcceptTOS,
+		Cache:      autocert.DirCache(certCacheDir),
+		HostPolicy: hpFn,
 	}
 
 	srv := s.newHTTPServer(ctx, ":https", false)
@@ -46,8 +55,8 @@ func (s *Server) RunAutoCert(ctx context.Context, certCacheDir string, domains .
 	s.serversMux.Unlock()
 
 	go func() {
-		if err := http.ListenAndServe(":80", m.HTTPHandler(nil)); err != nil {
-			s.Logf("gserv: autocert on :80 error: %v", err)
+		if err := http.ListenAndServe(":http", m.HTTPHandler(nil)); err != nil {
+			s.Logf("gserv: autocert on :http error: %v", err)
 		}
 	}()
 
@@ -61,8 +70,8 @@ func NewAutoCertHosts(hosts ...string) *AutoCertHosts {
 }
 
 type AutoCertHosts struct {
-	mux sync.RWMutex
 	m   map[string]struct{}
+	mux sync.RWMutex
 }
 
 func (a *AutoCertHosts) Set(hosts ...string) {

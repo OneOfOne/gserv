@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -33,7 +32,7 @@ func LogRequests(logJSONRequests bool) Handler {
 				var buf bytes.Buffer
 				io.Copy(&buf, req.Body)
 				req.Body.Close()
-				req.Body = ioutil.NopCloser(&buf)
+				req.Body = io.NopCloser(&buf)
 				j, _ := internal.Marshal(req.Header)
 				if ln := buf.Len(); ln > 0 {
 					switch buf.Bytes()[0] {

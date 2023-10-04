@@ -24,8 +24,6 @@ func (s *Server) RunTLS(addr string, certPairs []CertPair) error {
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
 
-	cfg.BuildNameToCertificate()
-
 	if addr == "" {
 		addr = ":https"
 	}

@@ -111,7 +111,7 @@ func joinPath(p1, p2 string) string {
 	if p2 != "" && p2[0] != '/' {
 		p2 = "/" + p2
 	}
-	return strings.Replace(p1+p2, "//", "/", -1)
+	return strings.ReplaceAll(p1+p2, "//", "/")
 }
 
 type groupHandlerChain struct {

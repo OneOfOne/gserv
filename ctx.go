@@ -43,20 +43,18 @@ const (
 // it is not thread safe and should never be used outside the handler
 type Context struct {
 	http.ResponseWriter
-	Req          *http.Request
-	bytesWritten int
-
-	s     *Server
 	Codec Codec
 
-	data   M
-	nextMW func()
-	next   func()
+	nextMW       func()
+	s            *Server
+	data         M
+	Req          *http.Request
+	next         func()
+	ReqQuery     url.Values
+	Params       router.Params
+	bytesWritten int
+	status       int
 
-	ReqQuery url.Values
-	Params   router.Params
-
-	status             int
 	hijackServeContent bool
 	done               bool
 }
