@@ -21,7 +21,7 @@ func TestProxy(t *testing.T) {
 	s2 := newServerAndWait(t, "localhost:0")
 	defer s2.Shutdown(0)
 
-	s2.GET("/*fn", ProxyHandler(s.Addrs()[0], func(s string) string {
+	s2.GET("/*fn", ProxyHandler(s.Addrs()[0], func(_ *http.Request, s string) string {
 		return "/api/" + s
 	}))
 

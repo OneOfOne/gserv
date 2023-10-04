@@ -18,7 +18,7 @@ var hopHeaders = []string{
 	"Upgrade",
 }
 
-func ProxyHandler(host string, pathFn func(string) string) Handler {
+func ProxyHandler(host string, pathFn func(req *http.Request, path string) string) Handler {
 	rp := &httputil.ReverseProxy{}
 
 	scheme := "http"
@@ -34,10 +34,6 @@ func ProxyHandler(host string, pathFn func(string) string) Handler {
 		req.URL.Host = host
 		req.Host = ""
 
-		if pathFn != nil {
-			req.URL.Path = pathFn(req.URL.Path)
-		}
-
 		h := req.Header
 		if _, ok := h["User-Agent"]; !ok {
 			// explicitly disable User-Agent so it's not set to default value
@@ -46,6 +42,10 @@ func ProxyHandler(host string, pathFn func(string) string) Handler {
 
 		for _, hh := range hopHeaders {
 			h.Del(hh)
+		}
+
+		if pathFn != nil {
+			req.URL.Path = pathFn(req, req.URL.Path)
 		}
 
 		h.Set("X-Forwarded-For", req.RemoteAddr)
