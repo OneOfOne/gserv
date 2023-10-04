@@ -240,7 +240,24 @@ func (r *Router) match(method, path string) (rn *Route, params *paramsWrapper) {
 	}
 
 	for _, n := range nn {
-		if len(n.parts) == nsep || n.hasStar() {
+		if n.hasStar() {
+			rn = n
+			break
+		}
+		if len(n.parts) == nsep {
+			if splitPathFn(path, '/', func(p string, pidx, idx int) bool {
+				np := n.parts[pidx]
+				if np.Type() == ':' {
+					return false
+				}
+				if string(np) != p {
+					return true
+				}
+
+				return false
+			}) {
+				continue
+			}
 			rn = n
 			break
 		}

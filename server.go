@@ -24,7 +24,7 @@ import (
 var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
 	msg, info := fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line)
 	ctx.Logf("%s (%s)", msg, info)
-	resp := NewJSONErrorResponse(500, msg, info)
+	resp := NewJSONErrorResponse(500, "internal server error")
 	ctx.Encode(500, resp)
 }
 

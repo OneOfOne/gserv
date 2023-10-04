@@ -1,7 +1,6 @@
 package gserv
 
 import (
-	"log"
 	"net/http"
 	"testing"
 )
@@ -9,7 +8,6 @@ import (
 func TestProxy(t *testing.T) {
 	s := newServerAndWait(t, "localhost:0")
 	defer s.Shutdown(0)
-	log.Printf(s.Addrs()[0])
 
 	worked := false
 	s.GET("/api/*fn", func(ctx *Context) Response {
