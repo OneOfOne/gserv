@@ -1,6 +1,7 @@
 package gserv
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -36,7 +37,7 @@ const (
 	ErrEmptyCallback = oerrs.String("empty callback")
 
 	// ErrEmptyData is returned when the data payload is empty
-	ErrEmptyData = oerrs.String("empty data")
+	ErrEmptyData = oerrs.String("payload data is empty")
 )
 
 // Context is the default context passed to handlers
@@ -164,7 +165,10 @@ func (ctx *Context) BindMsgpack(out any) error {
 func (ctx *Context) BindCodec(c Codec, out any) error {
 	c = genh.FirstNonZero(c, ctx.Codec, DefaultCodec)
 	err := c.Decode(ctx, out)
-	ctx.CloseBody()
+	_ = ctx.CloseBody()
+	if errors.Is(err, io.EOF) {
+		return ErrEmptyData
+	}
 	return err
 }
 
@@ -183,14 +187,14 @@ func (ctx *Context) Bind(out any) error {
 	}
 
 	err := c.Decode(ctx, out)
-	ctx.CloseBody()
+	_ = ctx.CloseBody()
 	if err != nil {
 		err = oerrs.Errorf("error decoding (%s): %w", ct, err)
 	}
 	return err
 }
 
-// Printf is a QoL function to handle outputing plain strings with optional fmt.Printf-style formating.
+// Printf is a QoL function to handle outputting plain strings with optional fmt.Printf-style formatting.
 // calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) Printf(code int, contentType, s string, args ...any) (int, error) {
 	ctx.done = true
