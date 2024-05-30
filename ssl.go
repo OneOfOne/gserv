@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"go.oneofone.dev/otk"
 	"golang.org/x/crypto/acme"
@@ -77,20 +78,21 @@ func (aco *AutoCertOpts) manager() (*autocert.Manager, error) {
 	}
 
 	m := &autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(aco.CacheDir),
-		Email:      aco.Email,
-		HostPolicy: aco.Hosts,
+		Prompt:      autocert.AcceptTOS,
+		Cache:       autocert.DirCache(aco.CacheDir),
+		Email:       aco.Email,
+		HostPolicy:  aco.Hosts,
+		RenewBefore: 10 * 24 * time.Hour,
+
+		ExternalAccountBinding: aco.Eab,
+
+		Client: &acme.Client{
+			DirectoryURL: autocert.DefaultACMEDirectory,
+		},
 	}
 
 	if aco.DirectoryURL != "" {
-		m.Client = &acme.Client{
-			DirectoryURL: aco.DirectoryURL,
-		}
-	}
-
-	if aco.Eab != nil {
-		m.ExternalAccountBinding = aco.Eab
+		m.Client.DirectoryURL = aco.DirectoryURL
 	}
 
 	return m, nil
