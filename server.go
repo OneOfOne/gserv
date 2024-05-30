@@ -166,13 +166,6 @@ func (s *Server) Run(ctx context.Context, addr string) error {
 	return srv.Serve(ln)
 }
 
-// CertPair is a pair of (cert, key) files to listen on TLS
-type CertPair struct {
-	Cert  []byte   `json:"cert"`
-	Key   []byte   `json:"key"`
-	Roots [][]byte `json:"roots"`
-}
-
 // SetKeepAlivesEnabled controls whether HTTP keep-alives are enabled.
 // By default, keep-alives are always enabled.
 func (s *Server) SetKeepAlivesEnabled(v bool) {
@@ -232,4 +225,55 @@ func (s *Server) AllowCORS(path string, allowedMethods ...string) {
 
 func (s *Server) Swagger() *router.Swagger {
 	return s.r.Swagger()
+}
+
+// Close immediately closes all the active underlying http servers and connections.
+func (s *Server) Close() error {
+	if !atomic.CompareAndSwapInt32(&s.closed, 0, 1) {
+		return http.ErrServerClosed
+	}
+
+	var me MultiError
+	s.serversMux.Lock()
+	for _, srv := range s.servers {
+		srv.SetKeepAlivesEnabled(false)
+		if err := srv.Close(); err != nil {
+			err = fmt.Errorf("%s (%T): %s", srv.Addr, err, err)
+			me.Push(err)
+		}
+	}
+
+	s.servers = nil
+	s.serversMux.Unlock()
+
+	return me.Err()
+}
+
+// Shutdown gracefully shutdown all the underlying http servers.
+// You can optionally set a timeout.
+func (s *Server) Shutdown(timeout time.Duration) error {
+	if !atomic.CompareAndSwapInt32(&s.closed, 0, 1) {
+		return http.ErrServerClosed
+	}
+
+	var (
+		me  MultiError
+		ctx = context.Background()
+	)
+
+	if timeout > 0 {
+		var cancelFn func()
+		ctx, cancelFn = context.WithDeadline(ctx, time.Now().Add(timeout))
+		defer cancelFn()
+	}
+
+	s.serversMux.Lock()
+	for _, srv := range s.servers {
+		srv.SetKeepAlivesEnabled(false)
+		me.Push(srv.Shutdown(ctx))
+	}
+	s.servers = nil
+	s.serversMux.Unlock()
+
+	return me.Err()
 }
