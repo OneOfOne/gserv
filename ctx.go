@@ -341,7 +341,9 @@ func (ctx *Context) WriteString(p string) (int, error) {
 
 // Write implements http.Flusher
 func (ctx *Context) Flush() {
-	ctx.ResponseWriter.(http.Flusher).Flush()
+	if f, ok := ctx.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }
 
 // Status returns last value written using WriteHeader.
