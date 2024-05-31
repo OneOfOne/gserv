@@ -104,6 +104,8 @@ type Server struct {
 	opts       Options
 	serversMux sync.Mutex
 	closed     int32
+
+	NoCompression bool // used by proxies
 }
 
 // ServeHTTP allows using the server in custom scenarios that expects an http.Handler.

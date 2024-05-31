@@ -478,7 +478,7 @@ var ctxPool = sync.Pool{
 
 func getCtx(rw http.ResponseWriter, req *http.Request, p router.Params, s *Server) *Context {
 	ctx := ctxPool.Get().(*Context)
-	if strings.Contains(req.Header.Get(acceptHeader), gzEnc) {
+	if !s.NoCompression && strings.Contains(req.Header.Get(acceptHeader), gzEnc) {
 		rw = getGzipRW(rw)
 	}
 

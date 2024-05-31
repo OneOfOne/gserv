@@ -8,8 +8,8 @@ import (
 )
 
 type filteredLogger struct {
-	matches [][]byte
 	w       io.Writer
+	matches [][]byte
 }
 
 func (fl *filteredLogger) Write(p []byte) (n int, err error) {
