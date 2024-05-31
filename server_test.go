@@ -21,6 +21,8 @@ func init() {
 	log.SetFlags(0)
 }
 
+var setErrLogger = SetErrLogger(FilteredLogger(log.Lshortfile, "/panic"))
+
 var testData = []struct {
 	path string
 	*JSONResponse
@@ -42,7 +44,7 @@ func newServerAndWait(t *testing.T, addr string) *Server {
 	if testing.Verbose() {
 		s = New()
 	} else {
-		s = New(SetErrLogger(nil)) // don't need the spam with panics for the /panic handler
+		s = New(setErrLogger) // don't need the spam with panics for the /panic handler
 	}
 	if addr == "" {
 		addr = "127.0.0.1:0"
@@ -98,7 +100,7 @@ func TestServer(t *testing.T) {
 	if testing.Verbose() {
 		srv = New(SetCatchPanics(true))
 	} else {
-		srv = New(SetCatchPanics(true), SetErrLogger(nil)) // don't need the spam with panics for the /panic handler
+		srv = New(SetCatchPanics(true), setErrLogger) // don't need the spam with panics for the /panic handler
 	}
 
 	// srv.PanicHandler = func(ctx *Context, v any) {
