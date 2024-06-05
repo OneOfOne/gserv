@@ -19,8 +19,8 @@ func TestProxy(t *testing.T) {
 	s2 := newServerAndWait(t, "localhost:0")
 	defer s2.Shutdown(0)
 
-	s2.GET("/*fn", ProxyHandler(s.Addrs()[0], func(_ *Context, s string) string {
-		return "/api/" + s
+	s2.GET("/*fn", ProxyHandler(s.Addrs()[0], func(_ *Context, s string) (string, error) {
+		return "/api/" + s, nil
 	}))
 
 	http.Get("http://" + s2.Addrs()[0] + "/x")

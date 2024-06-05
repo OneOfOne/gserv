@@ -18,7 +18,7 @@ var hopHeaders = []string{
 	"Upgrade",
 }
 
-func ProxyHandler(host string, pathFn func(ctx *Context, path string) string) Handler {
+func ProxyHandler(host string, pathFn func(ctx *Context, path string) (string, error)) Handler {
 	rp := &httputil.ReverseProxy{}
 
 	scheme := "http"
@@ -52,8 +52,11 @@ func ProxyHandler(host string, pathFn func(ctx *Context, path string) string) Ha
 
 	return func(ctx *Context) Response {
 		if pathFn != nil {
-			ctx.Path()
-			ctx.Req.URL.Path = pathFn(ctx, ctx.Req.URL.Path)
+			p, err := pathFn(ctx, ctx.Req.URL.Path)
+			if err != nil {
+				return NewJSONErrorResponse(http.StatusBadRequest, err)
+			}
+			ctx.Req.URL.Path = p
 		}
 
 		rp.ServeHTTP(ctx, ctx.Req)
