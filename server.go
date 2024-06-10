@@ -201,7 +201,6 @@ func (s *Server) Logf(f string, args ...any) {
 
 func (s *Server) logfStack(n int, f string, args ...any) {
 	lg := s.opts.Logger
-	log.Println(lg)
 	if lg == nil {
 		lg = log.Default()
 	}
