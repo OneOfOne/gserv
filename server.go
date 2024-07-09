@@ -25,7 +25,7 @@ var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
 	msg, info := fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line)
 	ctx.Logf("%s (%s)", msg, info)
 	resp := NewJSONErrorResponse(500, "internal server error")
-	ctx.Encode(500, resp)
+	_ = ctx.Encode(500, resp)
 }
 
 var noopLogger = log.New(io.Discard, "", 0)
@@ -77,7 +77,7 @@ func NewWithOpts(opts *Options) *Server {
 			return
 		}
 
-		RespNotFound.WriteToCtx(&Context{
+		_ = RespNotFound.WriteToCtx(&Context{
 			Req:            req,
 			ResponseWriter: w,
 		})
@@ -141,7 +141,7 @@ func (s *Server) newHTTPServer(ctx context.Context, addr string, forceHTTP2 bool
 
 	go func() {
 		<-ctx.Done()
-		srv.Shutdown(ctx)
+		_ = srv.Shutdown(ctx)
 	}()
 
 	return srv

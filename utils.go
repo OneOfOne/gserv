@@ -81,7 +81,6 @@ func StaticDirWithLimit(dir, paramName string, limit int) Handler {
 type noListingDir string
 
 func (d noListingDir) Open(name string) (f http.File, err error) {
-	const indexName = "/index.html"
 	hd := http.Dir(d)
 
 	if f, err = hd.Open(name); err != nil {

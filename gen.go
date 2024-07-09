@@ -84,10 +84,10 @@ func handleOutOnly[CodecT Codec, Resp any, HandlerFn func(ctx *Context) (resp Re
 			return NewResponse[CodecT](resp)
 		}
 		if respBytes {
-			ctx.Write(any(resp).([]byte))
+			_, _ = ctx.Write(any(resp).([]byte))
 			return nil
 		}
-		c.Encode(ctx, resp)
+		_ = c.Encode(ctx, resp)
 		return nil
 	})
 }
@@ -119,10 +119,10 @@ func handleInOut[CodecT Codec, Req, Resp any, HandlerFn func(ctx *Context, reqBo
 			return NewResponse[CodecT](resp)
 		}
 		if respBytes {
-			ctx.Write(any(resp).([]byte))
+			_, _ = ctx.Write(any(resp).([]byte))
 			return nil
 		}
-		c.Encode(ctx, resp)
+		_ = c.Encode(ctx, resp)
 		return nil
 	})
 }
@@ -134,6 +134,6 @@ func handleError[C Codec](ctx *Context, e error, wrapResp bool) Response {
 		return NewErrorResponse[C](err.Status(), err)
 	}
 	ctx.WriteHeader(err.Status())
-	c.Encode(ctx, getError(err))
+	_ = c.Encode(ctx, getError(err))
 	return nil
 }

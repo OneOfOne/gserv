@@ -84,7 +84,7 @@ func (g *Group) Static(path, localPath string, allowListing bool) Route {
 
 func (g *Group) StaticFile(path, localPath string) Route {
 	return g.AddRoute(http.MethodGet, path, func(ctx *Context) Response {
-		ctx.File(localPath)
+		_ = ctx.File(localPath)
 		return nil
 	})
 }
@@ -146,7 +146,7 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 			mwIdx++
 			if r := h(ctx); r != nil {
 				if r != Break {
-					r.WriteToCtx(ctx)
+					_ = r.WriteToCtx(ctx)
 				} else {
 					ctx.next = nil
 				}
@@ -165,7 +165,7 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 			hIdx++
 			if r := h(ctx); r != nil {
 				if r != Break {
-					r.WriteToCtx(ctx)
+					_ = r.WriteToCtx(ctx)
 				}
 				break
 			}

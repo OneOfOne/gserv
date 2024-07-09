@@ -30,7 +30,7 @@ func LogRequests(logJSONRequests bool) Handler {
 			switch m := req.Method; m {
 			case http.MethodPost, http.MethodPut, http.MethodPatch:
 				var buf bytes.Buffer
-				io.Copy(&buf, req.Body)
+				_, _ = io.Copy(&buf, req.Body)
 				req.Body.Close()
 				req.Body = io.NopCloser(&buf)
 				j, _ := internal.Marshal(req.Header)

@@ -174,8 +174,6 @@ type Limiters struct {
 	maxPerSecond int
 	maxPerMinute int
 	maxPerHour   int
-
-	mux sync.RWMutex
 }
 
 func (ls *Limiters) clean() {
