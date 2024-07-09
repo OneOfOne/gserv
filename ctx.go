@@ -320,13 +320,17 @@ func (ctx *Context) WriteHeader(s int) {
 func (ctx *Context) Write(p []byte) (int, error) {
 	if ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
 		ctx.hijackServeContent = false
-		NewJSONErrorResponse(ctx.status, p).WriteToCtx(ctx)
-		return len(p), nil
+		return len(p), NewJSONErrorResponse(ctx.status, p).WriteToCtx(ctx)
 	}
 
 	ctx.done = true
 	ctx.bytesWritten += len(p)
 	return ctx.ResponseWriter.Write(p)
+}
+
+// LimitRead limits the request body to the passed size.
+func (ctx *Context) LimitRead(sz int64) {
+	ctx.Req.Body = http.MaxBytesReader(ctx, ctx.Req.Body, sz)
 }
 
 // BytesWritten is the amount of bytes written from the body.
