@@ -15,8 +15,7 @@ type Options struct {
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 
-	CatchPanics              bool
-	EnableDefaultHTTPLogging bool // disables the spam on disconnects and tls, it can hide important messages sometimes
+	CatchPanics bool
 }
 
 // Option is a func to set internal server Options.

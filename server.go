@@ -122,9 +122,9 @@ func (s *Server) newHTTPServer(ctx context.Context, addr string, forceHTTP2 bool
 	}
 
 	lg := opts.Logger
-	if !opts.EnableDefaultHTTPLogging {
-		lg = noopLogger
-	}
+	// if !opts.EnableDefaultHTTPLogging {
+	// 	lg = noopLogger
+	// }
 
 	srv := &http.Server{
 		Addr:    addr,
