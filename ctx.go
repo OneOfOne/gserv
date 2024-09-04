@@ -1,6 +1,7 @@
 package gserv
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ var (
 	_ http.ResponseWriter = (*Context)(nil)
 	_ http.Flusher        = (*Context)(nil)
 	_ io.StringWriter     = (*Context)(nil)
+	_ context.Context     = (*Context)(nil)
 )
 
 const (
@@ -381,8 +383,10 @@ func (ctx *Context) MultipartReader() (*multipart.Reader, error) {
 	return multipart.NewReader(req.Body, boundary), nil
 }
 
-// Done returns wither the context is marked as done or not.
-func (ctx *Context) Done() bool { return ctx.done }
+// Finished returns wither the context is marked as done or not.
+func (ctx *Context) Finished() bool {
+	return ctx.done
+}
 
 // SetCookie sets an http-only cookie using the passed name, value and domain.
 // Returns an error if there was a problem encoding the value.
@@ -472,6 +476,25 @@ func (ctx *Context) Logf(format string, v ...any) {
 
 func (ctx *Context) LogSkipf(skip int, format string, v ...any) {
 	ctx.s.logfStack(skip+1, format, v...)
+}
+
+func (ctx *Context) Deadline() (time.Time, bool) {
+	return ctx.Req.Context().Deadline()
+}
+
+// Done implements context.Context.
+func (ctx *Context) Done() <-chan struct{} {
+	return ctx.Req.Context().Done()
+}
+
+// Err implements context.Context.
+func (ctx *Context) Err() error {
+	return ctx.Req.Context().Err()
+}
+
+// Value implements context.Context.
+func (ctx *Context) Value(key any) any {
+	return ctx.Req.Context().Value(key)
 }
 
 var ctxPool = sync.Pool{
