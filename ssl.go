@@ -177,11 +177,7 @@ func (a *AutoCertHosts) IsAllowed(_ context.Context, host string) error {
 
 // RunTLSAndAuto allows using custom certificates and autocert together.
 // It will always listen on both :80 and :443
-func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *AutoCertOpts) error {
-	m, err := opts.manager()
-	if err != nil {
-		return err
-	}
+func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *AutoCertOpts) (err error) {
 	srv := s.newHTTPServer(ctx, ":https", false)
 
 	cfg := &tls.Config{
@@ -227,18 +223,23 @@ func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *
 			}
 		}
 	}
-
-	cfg.GetCertificate = func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-		if m.HostPolicy != nil {
-			crt, err := m.GetCertificate(hello)
-			if err == nil {
-				return crt, err
-			}
+	var m *autocert.Manager
+	if opts != nil {
+		if m, err = opts.manager(); err != nil {
+			return err
 		}
-		// fallback to default tls impl
-		return nil, nil
-	}
 
+		cfg.GetCertificate = func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			if m.HostPolicy != nil {
+				crt, err := m.GetCertificate(hello)
+				if err == nil {
+					return crt, err
+				}
+			}
+			// fallback to default tls impl
+			return nil, nil
+		}
+	}
 	srv.TLSConfig = cfg
 
 	s.serversMux.Lock()
@@ -248,7 +249,11 @@ func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *
 	ch := make(chan error, 2)
 
 	go func() {
-		if err := http.ListenAndServe(":80", m.HTTPHandler(nil)); err != nil {
+		h := srv.Handler
+		if m != nil {
+			h = m.HTTPHandler(nil)
+		}
+		if err := http.ListenAndServe(":80", h); err != nil {
 			s.Logf("gserv: autocert on :80 error: %v", err)
 			ch <- err
 		}
