@@ -1,7 +1,6 @@
 package gserv
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +24,6 @@ var (
 	_ http.ResponseWriter = (*Context)(nil)
 	_ http.Flusher        = (*Context)(nil)
 	_ io.StringWriter     = (*Context)(nil)
-	_ context.Context     = (*Context)(nil)
 )
 
 const (
@@ -476,25 +474,6 @@ func (ctx *Context) Logf(format string, v ...any) {
 
 func (ctx *Context) LogSkipf(skip int, format string, v ...any) {
 	ctx.s.logfStack(skip+1, format, v...)
-}
-
-func (ctx *Context) Deadline() (time.Time, bool) {
-	return ctx.Req.Context().Deadline()
-}
-
-// Done implements context.Context.
-func (ctx *Context) Done() <-chan struct{} {
-	return ctx.Req.Context().Done()
-}
-
-// Err implements context.Context.
-func (ctx *Context) Err() error {
-	return ctx.Req.Context().Err()
-}
-
-// Value implements context.Context.
-func (ctx *Context) Value(key any) any {
-	return ctx.Req.Context().Value(key)
 }
 
 var ctxPool = sync.Pool{
