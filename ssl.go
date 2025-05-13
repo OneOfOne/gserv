@@ -123,7 +123,7 @@ func (s *Server) RunAutoCertDyn(ctx context.Context, opts *AutoCertOpts) error {
 		}
 	}()
 
-	if err = srv.ListenAndServeTLS("", ""); !strings.Contains(err.Error(), serverClosed) {
+	if err = srv.ListenAndServeTLS("", ""); strings.Contains(err.Error(), serverClosed) {
 		err = nil
 	}
 	return err
