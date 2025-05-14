@@ -22,7 +22,7 @@ func (fl *filteredLogger) Write(p []byte) (n int, err error) {
 }
 
 func FilteredLogger(flags int, msgs ...string) *log.Logger {
-	var fl = &filteredLogger{w: os.Stderr}
+	fl := &filteredLogger{w: os.Stderr}
 	for _, m := range msgs {
 		fl.matches = append(fl.matches, []byte(m))
 	}

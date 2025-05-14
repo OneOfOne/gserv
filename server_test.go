@@ -49,7 +49,13 @@ func newServerAndWait(t *testing.T, addr string) *Server {
 	if addr == "" {
 		addr = "127.0.0.1:0"
 	}
-	go s.Run(context.Background(), addr)
+	go func() {
+		if err := s.Run(context.Background(), addr); err != nil {
+			t.Errorf("unexpected error:%v", err)
+		}
+		t.Log("server closed")
+	}()
+
 	for {
 		select {
 		case <-timer:
@@ -223,7 +229,6 @@ func TestServer(t *testing.T) {
 		}
 
 		res, err = http.Get(ts.URL + "/s-std/router/README.md")
-
 		if err != nil {
 			t.Error(err)
 		}
@@ -239,7 +244,6 @@ func TestServer(t *testing.T) {
 		}
 
 		res, err = http.Get(ts.URL + "/s-std")
-
 		if err != nil {
 			t.Error(err)
 		}
@@ -255,7 +259,6 @@ func TestServer(t *testing.T) {
 		}
 
 		res, err = http.Get(ts.URL + "/s")
-
 		if err != nil {
 			t.Error(err)
 		}
@@ -271,7 +274,6 @@ func TestServer(t *testing.T) {
 		}
 
 		res, err = http.Get(ts.URL + "/README.md")
-
 		if err != nil {
 			t.Error(err)
 		}
@@ -336,4 +338,11 @@ func TestServer(t *testing.T) {
 func TestListenZero(t *testing.T) {
 	s := newServerAndWait(t, "")
 	defer s.Shutdown(0)
+}
+
+func TestServerClose(t *testing.T) {
+	s := newServerAndWait(t, "")
+	if err := s.s.Close(); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
 }

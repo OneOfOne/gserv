@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,8 +17,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/idna"
 )
-
-const serverClosed = "Server closed"
 
 func NewCertPair(certFile, keyFile string) (cp CertPair, err error) {
 	var cert, key []byte
@@ -118,12 +117,12 @@ func (s *Server) RunAutoCertDyn(ctx context.Context, opts *AutoCertOpts) error {
 	s.serversMux.Unlock()
 
 	go func() {
-		if err := http.ListenAndServe(":http", m.HTTPHandler(nil)); err != nil && !strings.Contains(err.Error(), serverClosed) {
+		if err := http.ListenAndServe(":http", m.HTTPHandler(nil)); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.Logf("gserv/autocert: error: %v", err)
 		}
 	}()
 
-	if err = srv.ListenAndServeTLS("", ""); strings.Contains(err.Error(), serverClosed) {
+	if err = srv.ListenAndServeTLS("", ""); errors.Is(err, http.ErrServerClosed) {
 		err = nil
 	}
 	return err
@@ -254,17 +253,19 @@ func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *
 		if m != nil {
 			h = m.HTTPHandler(nil)
 		}
-		if err := http.ListenAndServe(":80", h); !strings.Contains(err.Error(), serverClosed) {
+		if err := http.ListenAndServe(":80", h); !errors.Is(err, http.ErrServerClosed) {
 			s.Logf("gserv: autocert on :80 error: %v", err)
 			ch <- err
 		}
+		ch <- nil
 	}()
 
 	go func() {
-		if err := srv.ListenAndServeTLS("", ""); !strings.Contains(err.Error(), serverClosed) {
+		if err := srv.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 			s.Logf("gserv: autocert on :443 error: %v", err)
 			ch <- err
 		}
+		ch <- nil
 	}()
 
 	return <-ch

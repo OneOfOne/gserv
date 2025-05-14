@@ -2,6 +2,7 @@ package gserv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -145,7 +146,6 @@ func (s *Server) newHTTPServer(ctx context.Context, addr string, forceHTTP2 bool
 	}()
 
 	return srv
-
 }
 
 // Run starts the server on the specific address
@@ -165,7 +165,10 @@ func (s *Server) Run(ctx context.Context, addr string) error {
 	s.servers = append(s.servers, srv)
 	s.serversMux.Unlock()
 
-	return srv.Serve(ln)
+	if err = srv.Serve(ln); err != nil && errors.Is(err, http.ErrServerClosed) {
+		err = nil
+	}
+	return err
 }
 
 // SetKeepAlivesEnabled controls whether HTTP keep-alives are enabled.
