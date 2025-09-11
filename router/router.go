@@ -1,3 +1,4 @@
+// Package router is the main routing package of gserv
 package router
 
 import (
