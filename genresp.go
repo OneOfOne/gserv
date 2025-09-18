@@ -16,7 +16,7 @@ func NewResponse[CodecT Codec](data any) *GenResponse[CodecT] {
 	}
 }
 
-// NewJSONErrorResponse returns a new error response.
+// NewErrorResponse returns a new error response.
 // each err can be:
 // 1. string or []byte
 // 2. error
@@ -137,7 +137,7 @@ type (
 	}
 )
 
-// NewJSONResponse returns a new (json) success response (code 200) with the specific data
+// NewPlainResponse returns a new (json) success response (code 200) with the specific data
 func NewPlainResponse(data any) *PlainTextResponse {
 	return NewResponse[PlainTextCodec](data)
 }

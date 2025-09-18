@@ -154,7 +154,7 @@ func (ctx *Context) BindJSON(out any) error {
 	return ctx.BindCodec(JSONCodec{}, out)
 }
 
-// BindMsgpoack parses the request's body as msgpack, and closes the body.
+// BindMsgpack parses the request's body as msgpack, and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindMsgpack(out any) error {
 	return ctx.BindCodec(MsgpCodec{}, out)
@@ -338,12 +338,12 @@ func (ctx *Context) BytesWritten() int {
 	return ctx.bytesWritten
 }
 
-// Write implements io.StringWriter
+// WriteString implements io.StringWriter
 func (ctx *Context) WriteString(p string) (int, error) {
 	return ctx.ResponseWriter.Write(otk.UnsafeBytes(p))
 }
 
-// Write implements http.Flusher
+// Flush implements http.Flusher
 func (ctx *Context) Flush() {
 	if f, ok := ctx.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
@@ -396,14 +396,14 @@ func (ctx *Context) SetCookie(name string, value any, domain string, forceHTTPS 
 	var encValue string
 	if sc := GetSecureCookie(ctx); sc != nil {
 		if encValue, err = sc.Encode(name, value); err != nil {
-			return
+			return err
 		}
 	} else if s, ok := value.(string); ok {
 		encValue = s
 	} else {
 		var j []byte
 		if j, err = internal.Marshal(value); err != nil {
-			return
+			return err
 		}
 		encValue = string(j)
 	}
@@ -427,7 +427,7 @@ func (ctx *Context) SetCookie(name string, value any, domain string, forceHTTPS 
 	}
 
 	http.SetCookie(ctx, cookie)
-	return
+	return err
 }
 
 // RemoveCookie deletes the given cookie and sets its expires date in the past.
@@ -445,11 +445,11 @@ func (ctx *Context) RemoveCookie(name string) {
 func (ctx *Context) GetCookie(name string) (out string, ok bool) {
 	c, err := ctx.Req.Cookie(name)
 	if err != nil {
-		return
+		return out, ok
 	}
 	if sc := GetSecureCookie(ctx); sc != nil {
 		ok = sc.Decode(name, c.Value, &out) == nil
-		return
+		return out, ok
 	}
 	return c.Value, true
 }

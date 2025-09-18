@@ -43,7 +43,7 @@ func NewStream(ctx *gserv.Context, bufSize int) (lastEventID string, ss *Stream,
 
 	go processStream(ss, ctx)
 
-	return
+	return lastEventID, ss, err
 }
 
 type Stream struct {
@@ -124,14 +124,14 @@ func makeData(id, evt string, data any) ([]byte, error) {
 		buf.WriteString("data: \n")
 
 	case []byte:
-		for _, p := range bytes.Split(data, nl) {
+		for p := range bytes.SplitSeq(data, nl) {
 			buf.Write(dataBytes)
 			buf.Write(p)
 			buf.Write(nl)
 		}
 
 	case string:
-		for _, p := range strings.Split(data, "\n") {
+		for p := range strings.SplitSeq(data, "\n") {
 			buf.Write(dataBytes)
 			buf.WriteString(p)
 			buf.Write(nl)

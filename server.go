@@ -1,3 +1,4 @@
+// Package gserv is a simple, fast, and flexible HTTP server framework for Go.
 package gserv
 
 import (
@@ -189,7 +190,7 @@ func (s *Server) Addrs() (out []string) {
 		out[i] = srv.Addr
 	}
 	s.serversMux.Unlock()
-	return
+	return out
 }
 
 // Closed returns true if the server is already shutdown/closed

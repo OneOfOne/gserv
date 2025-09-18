@@ -2,7 +2,7 @@ package router
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -31,7 +31,7 @@ func splitPathToParts(p string) (pp string, rest []nodePart, num, stars int) {
 	parts := re.FindAllString(p, -1)
 	if len(parts) < 2 {
 		pp = p
-		return
+		return pp, rest, num, stars
 	}
 
 	pp = parts[0]
@@ -50,7 +50,7 @@ func splitPathToParts(p string) (pp string, rest []nodePart, num, stars int) {
 			return false
 		})
 	}
-	return
+	return pp, rest, num, stars
 }
 
 func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) bool {
@@ -95,7 +95,7 @@ type headRW struct {
 	http.ResponseWriter
 }
 
-func (w *headRW) Write(p []byte) (int, error) { return ioutil.Discard.Write(p) }
+func (w *headRW) Write(p []byte) (int, error) { return io.Discard.Write(p) }
 
 func pathNoQuery(p string) string {
 	if idx := strings.IndexByte(p, '?'); idx != -1 {
@@ -223,7 +223,9 @@ func bufApp(buf *[]byte, s string, w int, c byte) {
 	(*buf)[w] = c
 }
 
-var routeCtxKey = struct{}{}
+type routeCtxKeyType struct{}
+
+var routeCtxKey routeCtxKeyType
 
 func RouteFromRequest(r *http.Request) *Route {
 	rn, _ := r.Context().Value(routeCtxKey).(*Route)

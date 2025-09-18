@@ -33,7 +33,7 @@ func (ms *multiStream) remove(ch dataChan) (isEmpty bool) {
 	close(ch)
 	ms.mux.Unlock()
 
-	return
+	return isEmpty
 }
 
 func (ms *multiStream) close() {
@@ -77,7 +77,7 @@ func (r *Router) getOrMake(id string) (ms *multiStream) {
 	}
 	r.mux.Unlock()
 
-	return
+	return ms
 }
 
 func (r *Router) removeIfEmpty(ms *multiStream, ch dataChan, id string) {
@@ -93,7 +93,7 @@ func (r *Router) removeIfEmpty(ms *multiStream, ch dataChan, id string) {
 	r.mux.Unlock()
 }
 
-// Process will take over the current connection and process events
+// Handle will take over the current connection and process events
 func (r *Router) Handle(id string, bufSize int, ctx *gserv.Context) (_ gserv.Response) {
 	h := ctx.Header()
 	h.Set("Content-Type", "text/event-stream")
@@ -135,11 +135,11 @@ func (r *Router) Send(id, eventID, event string, data any) (err error) {
 
 	var b []byte
 	if b, err = makeData(eventID, event, data); err != nil {
-		return
+		return err
 	}
 	ms.data <- b
 
-	return
+	return err
 }
 
 func trySend(ch dataChan, evt []byte) bool {

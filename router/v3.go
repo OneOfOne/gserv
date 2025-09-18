@@ -43,30 +43,8 @@ type Route struct {
 	disabled atomic.Bool
 }
 
-func (n *Route) hasStar() bool {
-	return len(n.parts) > 0 && n.parts[len(n.parts)-1].Type() == '*'
-}
-
-func (n *Route) paramLen() (out int) {
-	for _, p := range n.parts {
-		if t := p.Type(); t == ':' || t == '*' {
-			out++
-		}
-	}
-	return
-}
-
-func (n *Route) getPartName(i int) (np string, pi int) {
-	for i < len(n.parts) {
-		np = string(n.parts[i])
-		pi++
-		if t := np[0]; t != '*' && t != ':' {
-			continue
-		}
-		np = np[1:]
-		break
-	}
-	return
+func (r *Route) hasStar() bool {
+	return len(r.parts) > 0 && r.parts[len(r.parts)-1].Type() == '*'
 }
 
 func (r *Route) Path() string {
@@ -81,19 +59,19 @@ func (r *Route) Handler() Handler {
 	return r.h
 }
 
-func (n *Route) WithDoc(desc string, genParams bool) *SwaggerRoute {
+func (r *Route) WithDoc(desc string, genParams bool) *SwaggerRoute {
 	sr := &SwaggerRoute{
 		Description: desc,
 	}
 
 	if genParams {
-		for _, p := range n.parts {
+		for _, p := range r.parts {
 			if p[0] == ':' || p[0] == '*' {
 				sr = sr.WithParam(p.Name(), p.String()+" is required", "path", "string", true, nil)
 			}
 		}
 	}
-	n.r.addRouteInfo(n.m, n.fp, sr)
+	r.r.addRouteInfo(r.m, r.fp, sr)
 	return sr
 }
 
@@ -167,7 +145,7 @@ func (r *Router) AddRoute(group, method, route string, h Handler) *Route {
 	return r.AddRouteWithDesc(group, method, route, h, "")
 }
 
-// AddRoute adds a Handler to the specific method and route.
+// AddRouteWithDesc adds a Handler to the specific method and route.
 // Calling AddRoute after starting the http server is racy and not supported.
 func (r *Router) AddRouteWithDesc(group, method, route string, h Handler, desc string) *Route {
 	p, rest, num, stars := splitPathToParts(route)
@@ -235,7 +213,7 @@ func (r *Router) match(method, path string) (rn *Route, params *paramsWrapper) {
 		if nn = m.get("/"); nn != nil {
 			nsep = strings.Count(path, "/")
 		} else {
-			return
+			return rn, params
 		}
 	}
 
@@ -264,7 +242,7 @@ func (r *Router) match(method, path string) (rn *Route, params *paramsWrapper) {
 	}
 
 	if rn == nil || len(rn.parts) == 0 {
-		return
+		return rn, params
 	}
 
 	params = r.getParams()
@@ -280,7 +258,7 @@ func (r *Router) match(method, path string) (rn *Route, params *paramsWrapper) {
 		return false
 	})
 
-	return
+	return rn, params
 }
 
 func (r *Router) getAllMaps() map[string]routeMap {

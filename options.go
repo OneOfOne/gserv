@@ -59,7 +59,7 @@ func SetRouterOptions(v *router.Options) Option {
 	}
 }
 
-// SetNoCatchPanics toggles catching panics in handlers.
+// SetCatchPanics toggles catching panics in handlers.
 func SetCatchPanics(enable bool) Option {
 	return func(opt *Options) {
 		opt.CatchPanics = enable

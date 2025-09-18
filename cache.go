@@ -1,6 +1,7 @@
 package gserv
 
 import (
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -68,9 +69,7 @@ func CacheHandler(etag func(ctx *Context) string, ttlDuration time.Duration, han
 		})
 
 		h := ctx.Header()
-		for k, v := range it.headers {
-			h[k] = v
-		}
+		maps.Copy(h, it.headers)
 
 		h.Set("Last-Modified", time.Unix(it.created, 0).UTC().Format(time.RFC1123))
 		h.Set("Cache-Control", maxAge)

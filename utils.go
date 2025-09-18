@@ -21,7 +21,7 @@ func HTTPHandler(h http.Handler) Handler {
 	return HTTPHandlerFunc(h.ServeHTTP)
 }
 
-// FromHTTPHandlerFunc returns a Handler from an http.Handler.
+// HTTPHandlerFunc returns a Handler from an http.Handler.
 func HTTPHandlerFunc(h http.HandlerFunc) Handler {
 	return func(ctx *Context) Response {
 		h(ctx, ctx.Req)
@@ -84,7 +84,7 @@ func (d noListingDir) Open(name string) (f http.File, err error) {
 	hd := http.Dir(d)
 
 	if f, err = hd.Open(name); err != nil {
-		return
+		return f, err
 	}
 
 	if s, _ := f.Stat(); s != nil && s.IsDir() {
@@ -93,7 +93,7 @@ func (d noListingDir) Open(name string) (f http.File, err error) {
 		return hd.Open(index)
 	}
 
-	return
+	return f, err
 }
 
 // AllowCORS allows CORS responses.
