@@ -5,11 +5,11 @@ go 1.25
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/gorilla/securecookie v1.1.2
-	go.oneofone.dev/genh v0.0.0-20250114195906-6ac3dee9275a
+	go.oneofone.dev/genh v1.2.0
 	go.oneofone.dev/oerrs v1.0.6
-	go.oneofone.dev/otk v1.0.8
-	golang.org/x/crypto v0.42.0
-	golang.org/x/net v0.44.0
+	go.oneofone.dev/otk v1.0.9
+	golang.org/x/crypto v0.43.0
+	golang.org/x/net v0.46.0
 )
 
 require (
@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/image v0.31.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/image v0.32.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )
