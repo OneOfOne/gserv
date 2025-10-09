@@ -98,6 +98,7 @@ func (d noListingDir) Open(name string) (f http.File, err error) {
 }
 
 func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
+	origin = strings.TrimPrefix(origin, "https://")
 	if set.Has(origin) {
 		return true
 	}
@@ -141,7 +142,7 @@ func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler 
 
 	fn := func(ctx *Context) (_ Response) {
 		rh, wh := ctx.Req.Header, ctx.Header()
-		origin := strings.TrimPrefix(rh.Get("Origin"), "https://")
+		origin := rh.Get("Origin")
 
 		if origin == "" { // return early if it's not a browser request
 			return
