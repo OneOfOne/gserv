@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go.oneofone.dev/gserv/internal"
+	"go.oneofone.dev/otk"
 	"golang.org/x/net/http2"
 )
 
@@ -96,6 +97,33 @@ func (d noListingDir) Open(name string) (f http.File, err error) {
 	return f, err
 }
 
+func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
+	if set.Has(origin) {
+		return true
+	}
+
+	if strings.Count(origin, ".") < 2 {
+		return false
+	}
+
+	_, origin, found := strings.Cut(origin, ".")
+	if !found {
+		return false
+	}
+
+	for _, orig := range keys {
+		orig, found := strings.CutPrefix(orig, "*.")
+		if !found {
+			continue
+		}
+		if strings.HasSuffix(origin, orig) {
+			return true
+		}
+
+	}
+	return false
+}
+
 // AllowCORS allows CORS responses.
 // If methods is empty, it will respond with the requested method.
 // If headers is empty, it will respond with the requested headers.
@@ -105,20 +133,21 @@ func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler 
 	ms := strings.Join(methods, ", ")
 	hs := strings.Join(headers, ", ")
 
-	om := map[string]bool{}
+	om := otk.NewSet()
 	for _, orig := range origins {
-		om[orig] = true
+		om.Set(strings.TrimPrefix(orig, "https://"))
 	}
+	omKeys := om.Keys()
 
 	fn := func(ctx *Context) (_ Response) {
 		rh, wh := ctx.Req.Header, ctx.Header()
-		origin := rh.Get("Origin")
+		origin := strings.TrimPrefix(rh.Get("Origin"), "https://")
 
 		if origin == "" { // return early if it's not a browser request
 			return
 		}
 
-		if len(om) == 0 || om[origin] {
+		if len(om) == 0 || matchStarOrigin(om, omKeys, origin) {
 			wh.Set("Access-Control-Allow-Origin", origin)
 			wh.Set("Access-Control-Allow-Credentials", "true")
 		} else {

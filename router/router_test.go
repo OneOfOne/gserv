@@ -61,7 +61,8 @@ func BenchmarkRouterStatic(b *testing.B) {
 	})
 }
 
-func buildAPIRouter(l testing.TB, print bool) (r *Router) {
+func buildAPIRouter(tb testing.TB, print bool) (r *Router) {
+	tb.Helper()
 	r = New(nil)
 	r.PanicHandler = nil
 	for _, m := range restAPIRoutes {
@@ -69,13 +70,13 @@ func buildAPIRouter(l testing.TB, print bool) (r *Router) {
 		cnt := strings.Count(ep, ":")
 		fn := func(_ http.ResponseWriter, req *http.Request, p Params) {
 			if ep != req.URL.EscapedPath() {
-				l.Fatalf("urls don't match, expected %s, got %s", ep, req.URL.EscapedPath())
+				tb.Fatalf("urls don't match, expected %s, got %s", ep, req.URL.EscapedPath())
 			}
 			if cnt != len(p) {
-				l.Fatalf("{%q: %q} expected %d params, got %d", ep, p, cnt, len(p))
+				tb.Fatalf("{%q: %q} expected %d params, got %d", ep, p, cnt, len(p))
 			}
 			if print {
-				l.Logf("[%s] %s %q", req.Method, ep, p)
+				tb.Logf("[%s] %s %q", req.Method, ep, p)
 			}
 		}
 
@@ -84,7 +85,7 @@ func buildAPIRouter(l testing.TB, print bool) (r *Router) {
 		r.AddRoute("", "PATCH", ep, fn)
 	}
 	r.NotFoundHandler = func(_ http.ResponseWriter, req *http.Request, _ Params) {
-		panic(req.URL.String())
+		tb.Fatalf("not found: %s", req.URL)
 	}
-	return
+	return r
 }
