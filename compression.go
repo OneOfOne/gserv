@@ -13,7 +13,6 @@ const (
 	encodingHeader    = "Content-Encoding"
 	lenHeader         = "Content-Length"
 
-	brEnc = "br"
 	gzEnc = "gzip"
 )
 

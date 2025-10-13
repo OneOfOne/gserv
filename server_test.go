@@ -94,8 +94,6 @@ func cmpData(a, b any) bool {
 	return av == bv
 }
 
-var pong = "pong"
-
 func panicTyped(ctx *Context) (any, error) {
 	panic("well... poo")
 }

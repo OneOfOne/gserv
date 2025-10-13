@@ -117,6 +117,7 @@ func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
 		if !found {
 			continue
 		}
+
 		if strings.HasSuffix(origin, orig) {
 			return true
 		}

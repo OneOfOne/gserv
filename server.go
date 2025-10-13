@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -29,8 +28,6 @@ var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
 	resp := NewJSONErrorResponse(500, "internal server error")
 	_ = ctx.Encode(500, resp)
 }
-
-var noopLogger = log.New(io.Discard, "", 0)
 
 // DefaultOpts are the default options used for creating new servers.
 var DefaultOpts = Options{
