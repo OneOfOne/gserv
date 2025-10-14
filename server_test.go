@@ -122,7 +122,9 @@ func TestServer(t *testing.T) {
 	})
 
 	JSONGet(srv, "/panic2", panicTyped, true)
-	srv.AllowCORS("/cors", "GET")
+	srv.Use(AllowCORS(nil, nil, []string{"example.com"}))
+
+	srv.POST("/cors", func(ctx *Context) Response { return nil })
 
 	JSONGet(srv, "/ping/:id", func(ctx *Context) (string, error) {
 		return "pong:" + ctx.Params.Get("id"), nil
@@ -306,12 +308,27 @@ func TestServer(t *testing.T) {
 	t.Run("CORS", func(t *testing.T) {
 		var (
 			client http.Client
-			req, _ = http.NewRequest(http.MethodOptions, ts.URL+"/cors", nil)
+			req, _ = http.NewRequest(http.MethodPost, ts.URL+"/cors", nil)
 		)
-		req.Header.Add("Origin", "http://localhost")
+		req.Header.Add("Origin", "https://example.com")
+		req.Header.Add("Access-Control-Request-Method", "GET")
 		resp, _ := client.Do(req)
 		resp.Body.Close()
 		if resp.Header.Get("Access-Control-Allow-Methods") != "GET" {
+			t.Errorf("unexpected headers: %+v", resp.Header)
+		}
+	})
+
+	t.Run("CORS_BAD_ORIGIN", func(t *testing.T) {
+		var (
+			client http.Client
+			req, _ = http.NewRequest(http.MethodPost, ts.URL+"/cors", nil)
+		)
+		req.Header.Add("Origin", "https://badexample.com")
+		req.Header.Add("Access-Control-Request-Method", "GET")
+		resp, _ := client.Do(req)
+		resp.Body.Close()
+		if resp.Header.Get("Access-Control-Allow-Methods") == "GET" {
 			t.Errorf("unexpected headers: %+v", resp.Header)
 		}
 	})

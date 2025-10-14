@@ -137,10 +137,12 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 			}
 		}
 	}
+
 	ctx.nextMW = func() {
 		if catchPanic != nil {
 			defer catchPanic()
 		}
+
 		for mwIdx < len(ghc.g.mw) && !ctx.done {
 			h := ghc.g.mw[mwIdx]
 			mwIdx++
@@ -153,6 +155,7 @@ func (ghc *groupHandlerChain) Serve(rw http.ResponseWriter, req *http.Request, p
 				break
 			}
 		}
+
 		ctx.nextMW = nil
 	}
 
