@@ -223,9 +223,7 @@ func bufApp(buf *[]byte, s string, w int, c byte) {
 	(*buf)[w] = c
 }
 
-type routeCtxKeyType struct{}
-
-var routeCtxKey routeCtxKeyType
+var routeCtxKey = struct{}{}
 
 func RouteFromRequest(r *http.Request) *Route {
 	rn, _ := r.Context().Value(routeCtxKey).(*Route)
