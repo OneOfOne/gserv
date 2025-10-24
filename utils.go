@@ -117,7 +117,8 @@ func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
 		if !found {
 			continue
 		}
-		if strings.HasSuffix(origin, orig) {
+
+		if origin == orig {
 			return true
 		}
 
@@ -130,7 +131,7 @@ func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
 // If headers is empty, it will respond with the requested headers.
 // If origins is empty, it will respond with the requested origin.
 // will automatically install an OPTIONS handler to each passed group.
-func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler {
+func AllowCORS(methods, headers, origins []string, groups ...*Group) Handler {
 	ms := strings.Join(methods, ", ")
 	hs := strings.Join(headers, ", ")
 
@@ -155,25 +156,33 @@ func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler 
 			return
 		}
 
-		if len(ms) > 0 {
+		if len(methods) > 0 {
 			wh.Set("Access-Control-Allow-Methods", ms)
 		} else if rm := rh.Get("Access-Control-Request-Method"); rm != "" {
 			wh.Set("Access-Control-Allow-Methods", rm)
+		} else {
+			wh.Set("Access-Control-Allow-Methods", "*")
 		}
 
-		if len(hs) > 0 {
+		if len(headers) > 0 {
 			wh.Set("Access-Control-Allow-Headers", hs)
 		} else if rh := rh.Get("Access-Control-Request-Headers"); rh != "" {
 			wh.Set("Access-Control-Allow-Headers", rh)
+		} else {
+			wh.Set("Access-Control-Allow-Headers", "*")
 		}
 
 		wh.Set("Access-Control-Max-Age", "86400") // 24 hours
+
+		if ctx.Req.Method == http.MethodOptions {
+			return RespEmpty
+		}
 
 		return
 	}
 
 	for _, g := range groups {
-		g.AddRoute("OPTIONS", "/*x", fn)
+		g.Use(fn)
 	}
 
 	return fn

@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
 type nodePart string
 
-func (np nodePart) Name() string { return string(np[1:]) }
-func (np nodePart) Type() uint8  { return np[0] }
+func (np nodePart) Name() string {
+	return string(np[1:])
+}
+
+func (np nodePart) Type() byte {
+	return np[0]
+}
 func (np nodePart) String() string {
 	if np.Type() == '/' {
 		return fmt.Sprintf("{%s}", np.Name())
 	}
 	return fmt.Sprintf("{%s '%c'}", np.Name(), np.Type())
 }
-
-var re = regexp.MustCompile(`([:*/]?[^:*]+)`)
 
 // splitPathToParts takes in a path (ex: /api/v1/someEndpoint/:id/*any) and returns:
 //
@@ -28,29 +30,30 @@ var re = regexp.MustCompile(`([:*/]?[^:*]+)`)
 //	num -> number of params (probably not needed...)
 //	stars -> number of stars, basically a sanity check, if it's not 0 or 1 then it's an invalid path
 func splitPathToParts(p string) (pp string, rest []nodePart, num, stars int) {
-	parts := re.FindAllString(p, -1)
-	if len(parts) < 2 {
+	idx := strings.IndexAny(p, ":*")
+	if idx == -1 {
 		pp = p
-		return pp, rest, num, stars
+		return
+	}
+	pp = p[:idx]
+	for part := range strings.SplitSeq(p[idx:], "/") {
+		if len(part) == 0 {
+			continue
+		}
+		switch part[0] {
+		case '*':
+			stars++
+			fallthrough
+		case ':':
+			num++
+			rest = append(rest, nodePart(part))
+		default:
+			rest = append(rest, nodePart("/"+part))
+
+		}
 	}
 
-	pp = parts[0]
-	for _, part := range parts[1:] {
-		splitPathFn(part, '/', func(sp string, _, _ int) bool {
-			switch c := sp[0]; c {
-			case '*':
-				stars++
-				fallthrough
-			case ':':
-				num++
-				fallthrough
-			case '/':
-				rest = append(rest, nodePart(sp))
-			}
-			return false
-		})
-	}
-	return pp, rest, num, stars
+	return
 }
 
 func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) bool {

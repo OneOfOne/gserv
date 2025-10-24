@@ -1,7 +1,6 @@
 package router
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -19,8 +18,8 @@ func TestRouter(t *testing.T) {
 		req, _ = http.NewRequest("PATCH", "../"+ep, nil)
 		r.ServeHTTP(nil, req)
 	}
-	j, _ := json.MarshalIndent(r.swagger, "", "  ")
-	t.Log("\n" + string(j))
+	// j, _ := json.MarshalIndent(r.swagger, "", "  ")
+	// t.Log("\n" + string(j))
 }
 
 func TestRouterStar(t *testing.T) {
