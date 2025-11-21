@@ -8,8 +8,8 @@ require (
 	go.oneofone.dev/genh v1.2.0
 	go.oneofone.dev/oerrs v1.0.6
 	go.oneofone.dev/otk v1.0.9
-	golang.org/x/crypto v0.43.0
-	golang.org/x/net v0.46.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/net v0.47.0
 )
 
 require (
@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/image v0.32.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/image v0.33.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )
