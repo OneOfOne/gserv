@@ -128,11 +128,12 @@ func (r *Router) GetRoutes() [][3]string {
 		for p, ns := range rm {
 			base := p
 			for _, n := range ns {
-				route := base
+				var route strings.Builder
+				route.WriteString(base)
 				for _, np := range n.parts {
-					route += "/" + string(np)
+					route.WriteString("/" + string(np))
 				}
-				routes = append(routes, [3]string{n.g, method, route})
+				routes = append(routes, [3]string{n.g, method, route.String()})
 			}
 		}
 	}

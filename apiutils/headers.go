@@ -1,6 +1,7 @@
 package apiutils
 
 import (
+	"maps"
 	"net/http"
 
 	"go.oneofone.dev/gserv"
@@ -33,9 +34,7 @@ func (m SHM) Set(k, v string) SHM {
 // Copy returns a copy of the map
 func (m SHM) Copy() SHM {
 	cp := make(SHM, len(m))
-	for k, v := range m {
-		cp[k] = v
-	}
+	maps.Copy(cp, m)
 	return cp
 }
 

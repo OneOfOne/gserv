@@ -98,8 +98,8 @@ type headRW struct {
 func (w *headRW) Write(p []byte) (int, error) { return io.Discard.Write(p) }
 
 func pathNoQuery(p string) string {
-	if idx := strings.IndexByte(p, '?'); idx != -1 {
-		return p[:idx]
+	if before, _, ok := strings.Cut(p, "?"); ok {
+		return before
 	}
 	return p
 }

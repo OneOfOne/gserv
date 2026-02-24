@@ -67,7 +67,7 @@ func (ss *Stream) Ping() error {
 }
 
 func (ss *Stream) Retry(ms int) (err error) {
-	return ss.send([]byte(fmt.Sprintf("retry: %d\n\n", ms)))
+	return ss.send(fmt.Appendf(nil, "retry: %d\n\n", ms))
 }
 
 func (ss *Stream) SendData(data any) error {
