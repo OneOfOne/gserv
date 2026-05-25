@@ -17,12 +17,12 @@ import (
 
 var nukeCookieDate = time.Date(1991, time.August, 6, 0, 0, 0, 0, time.UTC)
 
-// HTTPHandler returns a Handler from an http.Handler.
+// HTTPHandler converts an http.Handler into a gserv Handler.
 func HTTPHandler(h http.Handler) Handler {
 	return HTTPHandlerFunc(h.ServeHTTP)
 }
 
-// HTTPHandlerFunc returns a Handler from an http.Handler.
+// HTTPHandlerFunc converts an http.HandlerFunc into a gserv Handler.
 func HTTPHandlerFunc(h http.HandlerFunc) Handler {
 	return func(ctx *Context) Response {
 		h(ctx, ctx.Req)
@@ -30,7 +30,8 @@ func HTTPHandlerFunc(h http.HandlerFunc) Handler {
 	}
 }
 
-// StaticDirStd is a QoL wrapper for http.FileServer(http.Dir(dir)).
+// StaticDirStd returns a handler that serves static files from the given directory with an optional prefix.
+// If allowListing is false, directory listing is disabled and index.html is served for directories.
 func StaticDirStd(prefix, dir string, allowListing bool) Handler {
 	var fs http.FileSystem
 	if allowListing {
@@ -41,16 +42,15 @@ func StaticDirStd(prefix, dir string, allowListing bool) Handler {
 	return HTTPHandler(http.StripPrefix(prefix, http.FileServer(fs)))
 }
 
-// StaticDir is a shorthand for StaticDirWithLimit(dir, paramName, -1).
+// StaticDir returns a handler that serves static files from the given directory without prefix or listing.
 func StaticDir(dir, paramName string) Handler {
 	return StaticDirStd("", dir, false)
 	// return StaticDirWithLimit(dir, paramName, -1)
 }
 
-// StaticDirWithLimit returns a handler that handles serving static files.
-// paramName is the path param, for example: s.GET("/s/*fp", StaticDirWithLimit("./static/", "fp", 1000)).
-// if limit is > 0, it will only ever serve N files at a time.
-// BUG: returns 0 size for some reason
+// StaticDirWithLimit returns a handler that serves static files from the given directory.
+// The paramName is the path param used to extract the file path, for example: s.GET("/s/*fp", StaticDirWithLimit("./static/", "fp", 1000)).
+// If limit is greater than 0, at most N requests can be served simultaneously.
 func StaticDirWithLimit(dir, paramName string, limit int) Handler {
 	var (
 		sem chan struct{}
@@ -125,11 +125,11 @@ func matchStarOrigin(set otk.Set, keys []string, origin string) bool {
 	return false
 }
 
-// AllowCORS allows CORS responses.
-// If methods is empty, it will respond with the requested method.
-// If headers is empty, it will respond with the requested headers.
-// If origins is empty, it will respond with the requested origin.
-// will automatically install an OPTIONS handler to each passed group.
+// AllowCORS returns a CORS middleware that allows cross-origin requests.
+// If methods is empty, the requested method from Access-Control-Request-Method is used.
+// If headers is empty, the requested headers from Access-Control-Request-Headers are used.
+// If origins is empty, any origin is allowed via wildcard matching for subdomains.
+// It automatically installs an OPTIONS preflight handler to each passed group.
 func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler {
 	ms := strings.Join(methods, ", ")
 	hs := strings.Join(headers, ", ")
@@ -179,9 +179,10 @@ func AllowCORS(methods, headers, origins []string, groups ...GroupType) Handler 
 	return fn
 }
 
+// M is a shorthand type for map[string]any, used for context values.
 type M map[string]any
 
-// ToJSON returns a string json representation of M, mostly for debugging.
+// ToJSON returns a JSON string representation of M, primarily for debugging.
 func (m M) ToJSON(indent bool) string {
 	if len(m) == 0 {
 		return "{}"
@@ -196,17 +197,17 @@ func (m M) ToJSON(indent bool) string {
 	return string(j)
 }
 
-// MultiError handles returning multiple errors.
+// MultiError accumulates multiple errors and can be returned as a single error.
 type MultiError []error
 
-// Push adds an error to the MultiError slice if err != nil.
+// Push adds an error to the MultiError slice if err is not nil.
 func (me *MultiError) Push(err error) {
 	if err != nil {
 		*me = append(*me, err)
 	}
 }
 
-// Err returns nil if me is empty.
+// Err returns nil if there are no accumulated errors, or a combined error otherwise.
 func (me MultiError) Err() error {
 	if len(me) == 0 {
 		return nil
@@ -228,6 +229,7 @@ func (me MultiError) Error() string {
 	return "multiple errors returned:\n\t" + strings.Join(errs, "\n\t")
 }
 
+// H2Client returns an HTTP client configured for HTTP/2 with cleartext (h2c) support.
 func H2Client() *http.Client {
 	return &http.Client{
 		Transport: &http2.Transport{
@@ -239,6 +241,7 @@ func H2Client() *http.Client {
 	}
 }
 
+// DummyResponseWriter is a response writer that buffers output for inspection.
 type DummyResponseWriter struct {
 	h   http.Header
 	buf bytes.Buffer

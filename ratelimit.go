@@ -11,8 +11,12 @@ import (
 	"go.oneofone.dev/genh"
 )
 
+// LimitKeyFn is a function that generates a rate limit key from the request context.
 type LimitKeyFn = func(ctx *Context) string
 
+// RateLimiter returns a middleware that enforces rate limits per key derived from the context.
+// If limitKey is nil, it defaults to using the client IP address.
+// If setHeaders is true, it sets X-Rate-Limit-Limit, X-Rate-Limit-Remaining, and Retry-After headers on responses.
 func RateLimiter(ctx context.Context, limitKey LimitKeyFn, maxPerSecond, maxPerMinute, maxPerHour int, setHeaders bool) Handler {
 	ls := NewLimiters(ctx, maxPerSecond, maxPerMinute, maxPerHour)
 	limitsHeader := fmt.Sprintf(`%ds, %dm, %dh`, maxPerSecond, maxPerMinute, maxPerHour)
@@ -52,6 +56,7 @@ func RateLimiter(ctx context.Context, limitKey LimitKeyFn, maxPerSecond, maxPerM
 	}
 }
 
+// Limiter enforces rate limits per second, minute, and hour.
 type Limiter struct {
 	mux sync.RWMutex
 
@@ -73,6 +78,7 @@ type Limiter struct {
 	totalBlocked int64
 }
 
+// NewLimiter creates a new rate limiter with the given limits per second, minute, and hour.
 func NewLimiter(maxPerSecond, maxPerMinute, maxPerHour int) *Limiter {
 	ts := time.Now().Unix()
 	return &Limiter{
@@ -86,7 +92,8 @@ func NewLimiter(maxPerSecond, maxPerMinute, maxPerHour int) *Limiter {
 	}
 }
 
-// Allowed returns the duration until the next action is allowed and an error if it's longer than 0
+// Allowed checks if a request is allowed under the current rate limits.
+// It returns the duration until the next request can be made and an error if the limit is exceeded.
 func (l *Limiter) Allowed() (d time.Duration, err error) {
 	now := time.Now().Unix()
 
@@ -133,6 +140,7 @@ func (l *Limiter) Allowed() (d time.Duration, err error) {
 	return 0, nil
 }
 
+// LastAction returns the time of the last allowed or blocked action.
 func (l *Limiter) LastAction() (t time.Time) {
 	l.mux.RLock()
 	t = time.Unix(max(l.lastSec, l.lastMin, l.lastHour), 0)
@@ -150,6 +158,7 @@ func max(vs ...int64) int64 {
 	return m
 }
 
+// RequestsLeft returns the remaining allowed requests per second, minute, and hour.
 func (l *Limiter) RequestsLeft() (perSecond, perMinute, perHour int64) {
 	l.mux.RLock()
 	perHour, perMinute, perSecond = max(0, l.maxPerHour-l.reqPerHour), max(0, l.maxPerMinute-l.reqPerMinute), max(0, l.maxPerSecond-l.reqPerSecond)
@@ -157,6 +166,7 @@ func (l *Limiter) RequestsLeft() (perSecond, perMinute, perHour int64) {
 	return
 }
 
+// NewLimiters creates a new pool of rate limiters with the given limits per second, minute, and hour.
 func NewLimiters(ctx context.Context, maxPerSecond, maxPerMinute, maxPerHour int) *Limiters {
 	ls := &Limiters{
 		maxPerSecond: maxPerSecond,
@@ -167,6 +177,7 @@ func NewLimiters(ctx context.Context, maxPerSecond, maxPerMinute, maxPerHour int
 	return ls
 }
 
+// Limiters is a pool of rate limiters keyed by an arbitrary string.
 type Limiters struct {
 	ctx context.Context
 	m   genh.LMap[string, *Limiter]
@@ -195,6 +206,7 @@ func (ls *Limiters) clean() {
 	}
 }
 
+// Get returns the rate limiter for the given key, creating a new one if it doesn't exist.
 func (ls *Limiters) Get(key string) *Limiter {
 	return ls.m.MustGet(key, func() *Limiter {
 		return NewLimiter(ls.maxPerSecond, ls.maxPerMinute, ls.maxPerHour)

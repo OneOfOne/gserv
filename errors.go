@@ -7,22 +7,31 @@ import (
 	"go.oneofone.dev/otk"
 )
 
+// HTTPError is the interface for HTTP errors with a status code and message.
 type HTTPError interface {
 	Status() int
 	Error() string
 }
 
 var (
-	ErrBadRequest   = NewError(http.StatusBadRequest, "bad request")
+	// ErrBadRequest indicates a bad request (400).
+	ErrBadRequest = NewError(http.StatusBadRequest, "bad request")
+	// ErrUnauthorized indicates an unauthorized request (401).
 	ErrUnauthorized = NewError(http.StatusUnauthorized, "unauthorized")
-	ErrForbidden    = NewError(http.StatusForbidden, "the gates of time are closed")
-	ErrNotFound     = NewError(http.StatusNotFound, "not found")
-	ErrTeaPot       = NewError(http.StatusTeapot, "I'm a teapot")
+	// ErrForbidden indicates a forbidden request (403).
+	ErrForbidden = NewError(http.StatusForbidden, "the gates of time are closed")
+	// ErrNotFound indicates a resource not found (404).
+	ErrNotFound = NewError(http.StatusNotFound, "not found")
+	// ErrTeaPot is a fun 418 error.
+	ErrTeaPot = NewError(http.StatusTeapot, "I'm a teapot")
 
+	// ErrInternal indicates an internal server error (500).
 	ErrInternal = NewError(http.StatusInternalServerError, "internal error")
-	ErrNotImpl  = NewError(http.StatusNotImplemented, "not implemented")
+	// ErrNotImpl indicates a not implemented error (501).
+	ErrNotImpl = NewError(http.StatusNotImplemented, "not implemented")
 )
 
+// Error is a standard HTTP error with an optional caller info.
 type Error struct {
 	Caller  *callerInfo `json:"caller,omitempty"`
 	Message string      `json:"message,omitempty"`
@@ -35,6 +44,7 @@ type callerInfo struct {
 	Line int    `json:"line,omitempty"`
 }
 
+// NewError creates a new HTTPError with the given status code and message.
 func NewError(status int, msg any) HTTPError {
 	e := Error{
 		Code:    status,
@@ -43,6 +53,7 @@ func NewError(status int, msg any) HTTPError {
 	return e
 }
 
+// NewErrorWithCaller creates a new HTTPError with the given status code, message, and caller information.
 func NewErrorWithCaller(status int, msg string, skip int) HTTPError {
 	e := Error{
 		Code:    status,

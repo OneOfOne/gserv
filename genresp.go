@@ -8,6 +8,7 @@ import (
 	"go.oneofone.dev/oerrs"
 )
 
+// NewResponse creates a new successful response with status code 200 and the given data.
 func NewResponse[CodecT Codec](data any) *GenResponse[CodecT] {
 	return &GenResponse[CodecT]{
 		Code:    http.StatusOK,
@@ -16,14 +17,14 @@ func NewResponse[CodecT Codec](data any) *GenResponse[CodecT] {
 	}
 }
 
-// NewErrorResponse returns a new error response.
-// each err can be:
-// 1. string or []byte
-// 2. error
-// 3. Error / *Error
-// 4. another response, its Errors will be appended to the returned Response.
-// 5. MultiError
-// 6. if errs is empty, it will call http.StatusText(code) and set that as the error.
+// NewErrorResponse creates a new error response with the given status code.
+// Each err argument can be:
+// 1. string or []byte — used as the error message.
+// 2. error — its Error() method is used.
+// 3. Error or *Error — appended directly.
+// 4. another Response — its Errors are appended to this response.
+// 5. MultiError — each error is recursively appended.
+// If errs is empty, http.StatusText(code) is used as the error message.
 func NewErrorResponse[CodecT Codec](code int, errs ...any) (r *GenResponse[CodecT]) {
 	if len(errs) == 0 {
 		errs = append(errs, http.StatusText(code))
@@ -41,7 +42,7 @@ func NewErrorResponse[CodecT Codec](code int, errs ...any) (r *GenResponse[Codec
 	return r
 }
 
-// GenResponse is the default standard api response
+// GenResponse is the default standard API response type, generic over the codec used for encoding.
 type GenResponse[CodecT Codec] struct {
 	Data    any     `json:"data,omitempty"`
 	Errors  []Error `json:"errors,omitempty"`
@@ -49,6 +50,7 @@ type GenResponse[CodecT Codec] struct {
 	Success bool    `json:"success"`
 }
 
+// Status returns the HTTP status code for this response. If Code is 0, it defaults to BadRequest when there are errors, or OK otherwise.
 func (r GenResponse[CodecT]) Status() int {
 	if r.Code == 0 {
 		if len(r.Errors) > 0 {
@@ -60,7 +62,7 @@ func (r GenResponse[CodecT]) Status() int {
 	return r.Code
 }
 
-// WriteToCtx writes the response to a ResponseWriter
+// WriteToCtx writes the response's headers and body to the given Context.
 func (r GenResponse[CodecT]) WriteToCtx(ctx *Context) error {
 	switch r.Code {
 	case 0:
@@ -84,6 +86,7 @@ func (r GenResponse[CodecT]) WriteToCtx(ctx *Context) error {
 	return c.Encode(ctx, &r)
 }
 
+// Cached returns a cached version of this response for use with the CacheableResponse interface.
 func (r GenResponse[CodecT]) Cached() Response {
 	var c CodecT
 	var buf bytes.Buffer
@@ -92,7 +95,7 @@ func (r GenResponse[CodecT]) Cached() Response {
 }
 
 // ErrorList returns an errors.ErrorList of this response's errors or nil.
-// Deprecated: handled using MultiError
+// Deprecated: use MultiError instead.
 func (r *GenResponse[CodecT]) ErrorList() *oerrs.ErrorList {
 	if len(r.Errors) == 0 {
 		return nil
@@ -128,38 +131,47 @@ func (r *GenResponse[CodecT]) appendErr(err any) {
 }
 
 type (
+	// PlainTextResponse is a GenResponse using the PlainTextCodec.
 	PlainTextResponse = GenResponse[PlainTextCodec]
-	JSONResponse      = GenResponse[JSONCodec]
-	MsgpResponse      = GenResponse[MsgpCodec]
 
+	// JSONResponse is a GenResponse using the JSONCodec.
+	JSONResponse = GenResponse[JSONCodec]
+
+	// MsgpResponse is a GenResponse using the MsgpCodec.
+	MsgpResponse = GenResponse[MsgpCodec]
+
+	// CacheableResponse is an interface for responses that can be cached.
 	CacheableResponse interface {
 		Cached() Response
 	}
 )
 
-// NewPlainResponse returns a new (json) success response (code 200) with the specific data
+// NewPlainResponse creates a new successful (code 200) plain text response with the given data.
 func NewPlainResponse(data any) *PlainTextResponse {
 	return NewResponse[PlainTextCodec](data)
 }
 
+// NewPlainErrorResponse creates a new error plain text response with the given status code and errors.
 func NewPlainErrorResponse(code int, errs ...any) *PlainTextResponse {
 	return NewErrorResponse[PlainTextCodec](code, errs...)
 }
 
-// NewJSONResponse returns a new (json) success response (code 200) with the specific data
+// NewJSONResponse creates a new successful (code 200) JSON response with the given data.
 func NewJSONResponse(data any) *JSONResponse {
 	return NewResponse[JSONCodec](data)
 }
 
+// NewJSONErrorResponse creates a new error JSON response with the given status code and errors.
 func NewJSONErrorResponse(code int, errs ...any) *JSONResponse {
 	return NewErrorResponse[JSONCodec](code, errs...)
 }
 
-// NewMsgpResponse returns a new (msgpack) success response (code 200) with the specific data
+// NewMsgpResponse creates a new successful (code 200) msgpack response with the given data.
 func NewMsgpResponse(data any) *MsgpResponse {
 	return NewResponse[MsgpCodec](data)
 }
 
+// NewMsgpErrorResponse creates a new error msgpack response with the given status code and errors.
 func NewMsgpErrorResponse(code int, errs ...any) *MsgpResponse {
 	return NewErrorResponse[MsgpCodec](code, errs...)
 }

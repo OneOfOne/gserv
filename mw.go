@@ -14,8 +14,8 @@ import (
 
 var reqID uint64
 
-// LogRequests is a request logger middleware.
-// If logJSONRequests is true, it'll attempt to parse the incoming request's body and output it to the log.
+// LogRequests returns a middleware that logs each request with its method, path, status code, duration, and client IP.
+// If logJSONRequests is true, it also attempts to parse and log the incoming request body for JSON content types.
 func LogRequests(logJSONRequests bool) Handler {
 	return func(ctx *Context) Response {
 		var (
@@ -70,7 +70,7 @@ func LogRequests(logJSONRequests bool) Handler {
 
 const secureCookieKey = ":SC:"
 
-// SecureCookie is a middleware to enable SecureCookies.
+// SecureCookie is a middleware that enables SecureCookies for the context.
 // For more details check `go doc securecookie.New`
 func SecureCookie(hashKey, blockKey []byte) Handler {
 	return func(ctx *Context) Response {
@@ -79,7 +79,7 @@ func SecureCookie(hashKey, blockKey []byte) Handler {
 	}
 }
 
-// GetSecureCookie returns the *securecookie.SecureCookie associated with the Context, or nil.
+// GetSecureCookie retrieves the SecureCookie from the context, or nil if not set.
 func GetSecureCookie(ctx *Context) *securecookie.SecureCookie {
 	sc, ok := ctx.Get(secureCookieKey).(*securecookie.SecureCookie)
 	if ok {

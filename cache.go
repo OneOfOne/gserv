@@ -32,6 +32,11 @@ func cleanCache(m *cacheMap, ttl int64) {
 	}
 }
 
+// CacheHandler returns a caching middleware that caches responses based on an ETag.
+// It checks the Cache-Control header for "no-cache" or "max-age=0" and bypasses the cache if found.
+// The etag function generates a unique identifier per request, which is used as the cache key.
+// If the ttlDuration is greater than 0, a background goroutine periodically cleans expired cache items.
+// Cached responses must implement the CacheableResponse interface to be stored.
 func CacheHandler(etag func(ctx *Context) string, ttlDuration time.Duration, handler Handler) Handler {
 	c := cacheMap{}
 	ttl := int64(ttlDuration.Seconds())

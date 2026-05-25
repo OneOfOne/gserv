@@ -17,7 +17,7 @@ const (
 	gzEnc = "gzip"
 )
 
-var gzPool = sync.Pool{
+var gzPool = sync.Pool{ // gzipRW pool for efficient reuse of gzip writers
 	New: func() any {
 		w := gzip.NewWriter(io.Discard)
 		return &gzipRW{nil, w, false}
@@ -32,6 +32,7 @@ func getGzipRW(rw http.ResponseWriter) *gzipRW {
 	return grw
 }
 
+// gzipRW wraps an http.ResponseWriter with gzip compression support.
 type gzipRW struct {
 	http.ResponseWriter
 	gz    *gzip.Writer
