@@ -205,7 +205,7 @@ srv := gserv.New(
 
 - Powering [![AIQ](https://cdn.prod.website-files.com/68222f6c9ed2892e3e806c2e/68223378851997e82ba5a2df_aiq-favicon.png)](https://aiq.com) since 2019.
 
-- 
+
 ## Disclaimer
 
 - AI was used to generate this README and some of the package's documentation.
