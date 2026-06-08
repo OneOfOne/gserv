@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+// DefaultPanicHandler is the default panic recovery handler that logs the panic and returns a JSON 500 error response.
 var DefaultPanicHandler = func(ctx *Context, v any, fr *oerrs.Frame) {
 	msg, info := fmt.Sprintf("PANIC in %s %s: %v", ctx.Req.Method, ctx.Path(), v), fmt.Sprintf("at %s %s:%d", fr.Function, fr.File, fr.Line)
 	ctx.Logf("%s (%s)", msg, info)
@@ -42,7 +43,7 @@ var DefaultOpts = Options{
 	Logger: log.New(os.Stderr, "gserv: ", 0),
 }
 
-// New returns a new server with the specified options.
+// New creates a new Server with the given options.
 func New(opts ...Option) *Server {
 	o := DefaultOpts
 
@@ -53,7 +54,7 @@ func New(opts ...Option) *Server {
 	return NewWithOpts(&o)
 }
 
-// NewWithOpts allows passing the Options struct directly
+// NewWithOpts creates a new Server from an Options struct.
 func NewWithOpts(opts *Options) *Server {
 	srv := &Server{}
 
@@ -94,7 +95,7 @@ type (
 	PanicHandler = func(ctx *Context, v any, fr *oerrs.Frame)
 )
 
-// Server is the main server
+// Server is the main HTTP server type.
 type Server struct {
 	Group
 	r *router.Router
@@ -110,7 +111,7 @@ type Server struct {
 	NoCompression bool // used by proxies
 }
 
-// ServeHTTP allows using the server in custom scenarios that expects an http.Handler.
+// ServeHTTP implements http.Handler, allowing the server to be used in custom scenarios.
 func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s.r.ServeHTTP(w, req)
 }
@@ -149,7 +150,8 @@ func (s *Server) newHTTPServer(ctx context.Context, addr string, forceHTTP2 bool
 	return srv
 }
 
-// Run starts the server on the specific address
+// Run starts the server on the given address with HTTP/2 support.
+// If addr is empty, it defaults to ":http".
 func (s *Server) Run(ctx context.Context, addr string) error {
 	if addr == "" {
 		addr = ":http"
@@ -172,8 +174,7 @@ func (s *Server) Run(ctx context.Context, addr string) error {
 	return err
 }
 
-// SetKeepAlivesEnabled controls whether HTTP keep-alives are enabled.
-// By default, keep-alives are always enabled.
+// SetKeepAlivesEnabled enables or disables HTTP keep-alives on all underlying servers.
 func (s *Server) SetKeepAlivesEnabled(v bool) {
 	s.serversMux.Lock()
 	for _, srv := range s.servers {
@@ -182,7 +183,7 @@ func (s *Server) SetKeepAlivesEnabled(v bool) {
 	s.serversMux.Unlock()
 }
 
-// Addrs returns all the listening addresses used by the underlying http.Server(s).
+// Addrs returns all the listening addresses of the underlying http.Servers.
 func (s *Server) Addrs() (out []string) {
 	s.serversMux.Lock()
 	out = make([]string, len(s.servers))
@@ -193,12 +194,12 @@ func (s *Server) Addrs() (out []string) {
 	return out
 }
 
-// Closed returns true if the server is already shutdown/closed
+// Closed returns true if the server has been shut down or closed.
 func (s *Server) Closed() bool {
 	return atomic.LoadInt32(&s.closed) == 1
 }
 
-// Logf logs to the default server logger if set
+// Logf logs a formatted message using the server's logger.
 func (s *Server) Logf(f string, args ...any) {
 	s.logfStack(2, f, args...)
 }
@@ -224,16 +225,17 @@ func (s *Server) logfStack(n int, f string, args ...any) {
 	lg.Printf(strings.Join(parts, "/")+":"+strconv.Itoa(line)+": "+f, args...)
 }
 
-// AllowCORS is an alias for s.AddRoute("OPTIONS", path, AllowCORS(allowedMethods...))
+// AllowCORS adds an OPTIONS route for CORS support using the given allowed methods.
 func (s *Server) AllowCORS(path string, allowedMethods ...string) {
 	s.AddRoute(http.MethodOptions, path, AllowCORS(allowedMethods, nil, nil))
 }
 
+// Swagger returns the swagger documentation instance for this server.
 func (s *Server) Swagger() *router.Swagger {
 	return s.r.Swagger()
 }
 
-// Close immediately closes all the active underlying http servers and connections.
+// Close immediately closes all the active underlying http servers and connections without graceful shutdown.
 func (s *Server) Close() error {
 	if !atomic.CompareAndSwapInt32(&s.closed, 0, 1) {
 		return http.ErrServerClosed
@@ -255,8 +257,7 @@ func (s *Server) Close() error {
 	return me.Err()
 }
 
-// Shutdown gracefully shutdown all the underlying http servers.
-// You can optionally set a timeout.
+// Shutdown gracefully shuts down all the underlying http servers, optionally with a timeout.
 func (s *Server) Shutdown(timeout time.Duration) error {
 	if !atomic.CompareAndSwapInt32(&s.closed, 0, 1) {
 		return http.ErrServerClosed

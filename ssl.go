@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/idna"
 )
 
+// NewCertPair reads a certificate and key file pair from disk.
 func NewCertPair(certFile, keyFile string) (cp CertPair, err error) {
 	var cert, key []byte
 	if cert, err = os.ReadFile(certFile); err != nil {
@@ -31,16 +32,16 @@ func NewCertPair(certFile, keyFile string) (cp CertPair, err error) {
 	return CertPair{Cert: cert, Key: key}, nil
 }
 
-// CertPair is a pair of (cert, key) files to listen on TLS
+// CertPair holds a TLS certificate and key pair along with optional root CA certificates.
 type CertPair struct {
 	Cert  []byte   `json:"cert"`
 	Key   []byte   `json:"key"`
 	Roots [][]byte `json:"roots"`
 }
 
-// RunAutoCert enables automatic support for LetsEncrypt, using the optional passed domains list.
-// certCacheDir is where the certificates will be cached, defaults to "./autocert".
-// Note that it must always run on *BOTH* ":80" and ":443" so the addr param is omitted.
+// RunAutoCert enables automatic LetsEncrypt support using the given domains as a whitelist.
+// certCacheDir is where certificates are cached, defaulting to "./autocert".
+// It must always be run on both ":80" and ":443", so the addr parameter is omitted.
 func (s *Server) RunAutoCert(ctx context.Context, certCacheDir string, domains ...string) error {
 	var hbFn autocert.HostPolicy
 	if len(domains) > 0 {
@@ -53,6 +54,7 @@ func (s *Server) RunAutoCert(ctx context.Context, certCacheDir string, domains .
 	})
 }
 
+// AutoCertOpts configures automatic LetsEncrypt certificate management.
 type AutoCertOpts struct {
 	Hosts autocert.HostPolicy `json:"hosts"`
 
@@ -98,9 +100,9 @@ func (aco *AutoCertOpts) manager() (*autocert.Manager, error) {
 	return m, nil
 }
 
-// RunAutoCertDyn enables automatic support for LetsEncrypt, using a dynamic HostPolicy.
-// certCacheDir is where the certificates will be cached, defaults to "./autocert".
-// Note that it must always run on *BOTH* ":80" and ":443" so the addr param is omitted.
+// RunAutoCertDyn enables automatic LetsEncrypt support using a dynamic HostPolicy for domain validation.
+// certCacheDir is where certificates are cached, defaulting to "./autocert".
+// It must always be run on both ":80" and ":443", so the addr parameter is omitted.
 func (s *Server) RunAutoCertDyn(ctx context.Context, opts *AutoCertOpts) error {
 	m, err := opts.manager()
 	if err != nil {
@@ -128,17 +130,20 @@ func (s *Server) RunAutoCertDyn(ctx context.Context, opts *AutoCertOpts) error {
 	return err
 }
 
+// NewAutoCertHosts creates a new AutoCertHosts instance from the given hostnames.
 func NewAutoCertHosts(hosts ...string) *AutoCertHosts {
 	var ach AutoCertHosts
 	ach.appendHosts(hosts...)
 	return &ach
 }
 
+// AutoCertHosts provides a dynamic host whitelist for LetsEncrypt autocert.
 type AutoCertHosts struct {
 	m   otk.Set
 	mux sync.RWMutex
 }
 
+// Set updates the set of allowed hosts.
 func (a *AutoCertHosts) Set(hosts ...string) {
 	a.mux.Lock()
 	a.appendHosts(hosts...)
@@ -155,6 +160,7 @@ func (a *AutoCertHosts) appendHosts(hosts ...string) (m map[string]struct{}) {
 	return
 }
 
+// Contains checks if the given host is in the whitelist.
 func (a *AutoCertHosts) Contains(host string) bool {
 	host = strings.ToLower(host)
 	if h, err := idna.Lookup.ToASCII(host); err == nil {
@@ -168,6 +174,7 @@ func (a *AutoCertHosts) Contains(host string) bool {
 	return ok
 }
 
+// IsAllowed implements autocert.HostPolicy, returning an error if the host is not allowed.
 func (a *AutoCertHosts) IsAllowed(_ context.Context, host string) error {
 	if a.Contains(host) {
 		return nil
@@ -175,8 +182,8 @@ func (a *AutoCertHosts) IsAllowed(_ context.Context, host string) error {
 	return fmt.Errorf("gserv/autocert: host %q not configured in AutoCertHosts", host)
 }
 
-// RunTLSAndAuto allows using custom certificates and autocert together.
-// It will always listen on both :80 and :443
+// RunTLSAndAuto enables TLS with custom certificates alongside LetsEncrypt autocert.
+// It always listens on both :80 and :443.
 func (s *Server) RunTLSAndAuto(ctx context.Context, certPairs []CertPair, opts *AutoCertOpts) (err error) {
 	srv := s.newHTTPServer(ctx, ":https", false)
 

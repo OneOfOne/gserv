@@ -18,6 +18,8 @@ var hopHeaders = []string{
 	"Upgrade",
 }
 
+// ProxyHandler creates a reverse proxy handler for the given host.
+// The pathFn, if provided, allows modifying the request URL path before forwarding.
 func ProxyHandler(host string, pathFn func(ctx *Context, path string) (string, error)) Handler {
 	rp := &httputil.ReverseProxy{}
 

@@ -9,15 +9,16 @@ import (
 )
 
 type (
+	// Route is a type alias for the router's Route type.
 	Route = *router.Route
 )
 
-var DefaultCodec Codec = &JSONCodec{}
+var DefaultCodec Codec = &JSONCodec{} // DefaultCodec is the default codec used by the framework, set to JSONCodec.
 
-// Handler is the default server Handler
-// In a handler chain, returning a non-nil breaks the chain.
+// Handler is the default server handler type. In a handler chain, returning a non-nil Response breaks the chain.
 type Handler = func(ctx *Context) Response
 
+// Group is a collection of routes with shared middleware and path prefix.
 type Group struct {
 	s    *Server
 	nm   string
@@ -30,14 +31,13 @@ func (g *Group) Use(mw ...Handler) {
 	g.mw = append(g.mw, mw...)
 }
 
-// Routes returns the current routes set.
-// Each route is returned in the order of group name, method, path.
+// Routes returns all registered routes. Each route is returned as [group name, method, path].
 func (g *Group) Routes() [][3]string {
 	return g.s.r.GetRoutes()
 }
 
-// AddRoute adds a handler (or more) to the specific method and path
-// it is NOT safe to call this once you call one of the run functions
+// AddRoute adds one or more handlers for the given HTTP method and path to this group.
+// It is NOT safe to call this after starting the server.
 func (g *Group) AddRoute(method, path string, handlers ...Handler) Route {
 	ghc := groupHandlerChain{
 		hc: handlers,
@@ -47,27 +47,27 @@ func (g *Group) AddRoute(method, path string, handlers ...Handler) Route {
 	return g.s.r.AddRoute(g.nm, method, p, ghc.Serve)
 }
 
-// GET is an alias for AddRoute("GET", path, handlers...).
+// GET registers a GET route for the given path with the specified handlers.
 func (g *Group) GET(path string, handlers ...Handler) Route {
 	return g.AddRoute(http.MethodGet, path, handlers...)
 }
 
-// PUT is an alias for AddRoute("PUT", path, handlers...).
+// PUT registers a PUT route for the given path with the specified handlers.
 func (g *Group) PUT(path string, handlers ...Handler) Route {
 	return g.AddRoute(http.MethodPut, path, handlers...)
 }
 
-// POST is an alias for AddRoute("POST", path, handlers...).
+// POST registers a POST route for the given path with the specified handlers.
 func (g *Group) POST(path string, handlers ...Handler) Route {
 	return g.AddRoute(http.MethodPost, path, handlers...)
 }
 
-// DELETE is an alias for AddRoute("DELETE", path, handlers...).
+// DELETE registers a DELETE route for the given path with the specified handlers.
 func (g *Group) DELETE(path string, handlers ...Handler) Route {
 	return g.AddRoute(http.MethodDelete, path, handlers...)
 }
 
-// OPTIONS is an alias for AddRoute("OPTIONS", path, handlers...).
+// OPTIONS registers an OPTIONS route for the given path with the specified handlers.
 func (g *Group) OPTIONS(path string, handlers ...Handler) Route {
 	return g.AddRoute(http.MethodOptions, path, handlers...)
 }
@@ -76,12 +76,14 @@ func (g *Group) DisableRoute(method, path string, disabled bool) bool {
 	return g.s.r.DisableRoute(method, joinPath(g.path, path), disabled)
 }
 
+// Static registers a GET route that serves static files from the given local path.
 func (g *Group) Static(path, localPath string, allowListing bool) Route {
 	path = strings.TrimSuffix(path, "/")
 
 	return g.AddRoute(http.MethodGet, joinPath(path, "*fp"), StaticDirStd(path, localPath, allowListing))
 }
 
+// StaticFile registers a GET route that serves a single static file.
 func (g *Group) StaticFile(path, localPath string) Route {
 	return g.AddRoute(http.MethodGet, path, func(ctx *Context) Response {
 		_ = ctx.File(localPath)
@@ -89,7 +91,7 @@ func (g *Group) StaticFile(path, localPath string) Route {
 	})
 }
 
-// SubGroup returns a sub-handler group based on the current group's middleware
+// SubGroup creates a new sub-group inheriting the current group's middleware.
 func (g *Group) SubGroup(name, path string, mw ...Handler) *Group {
 	return &Group{
 		nm:   name,

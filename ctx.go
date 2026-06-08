@@ -27,21 +27,20 @@ var (
 )
 
 const (
-	// ErrDir is Returned from ctx.File when the path is a directory not a file.
+	// ErrDir is returned from ctx.File when the path is a directory, not a file.
 	ErrDir = oerrs.String("file is a directory")
 
-	// ErrInvalidURL gets returned on invalid redirect urls.
+	// ErrInvalidURL is returned on invalid redirect URLs.
 	ErrInvalidURL = oerrs.String("invalid redirect error")
 
-	// ErrEmptyCallback is returned when a callback is empty
+	// ErrEmptyCallback is returned when a callback is empty.
 	ErrEmptyCallback = oerrs.String("empty callback")
 
-	// ErrEmptyData is returned when the data payload is empty
+	// ErrEmptyData is returned when the data payload is empty.
 	ErrEmptyData = oerrs.String("payload data is empty")
 )
 
-// Context is the default context passed to handlers
-// it is not thread safe and should never be used outside the handler
+// Context is the default context passed to handlers. It is not thread safe and should never be used outside the handler.
 type Context struct {
 	http.ResponseWriter
 	Codec Codec
@@ -60,21 +59,22 @@ type Context struct {
 	done               bool
 }
 
+// Route returns the current route.
 func (ctx *Context) Route() *router.Route {
 	return router.RouteFromRequest(ctx.Req)
 }
 
-// Param is a shorthand for ctx.Params.Get(name).
+// Param returns a path parameter by key name.
 func (ctx *Context) Param(key string) string {
 	return ctx.Params.Get(key)
 }
 
-// Query is a shorthand for ctx.Req.URL.Query().Get(key).
+// Query returns a query parameter value by key name.
 func (ctx *Context) Query(key string) string {
 	return ctx.ReqQuery.Get(key)
 }
 
-// QueryDefault returns the query key or a default value.
+// QueryDefault returns the query parameter value for key, or the default value if missing.
 func (ctx *Context) QueryDefault(key, def string) string {
 	if v := ctx.ReqQuery.Get(key); v != "" {
 		return v
@@ -82,12 +82,12 @@ func (ctx *Context) QueryDefault(key, def string) string {
 	return def
 }
 
-// Get returns a context value
+// Get retrieves a value stored in the context by key.
 func (ctx *Context) Get(key string) any {
 	return ctx.data[key]
 }
 
-// Set sets a context value, useful in passing data to other handlers down the chain
+// Set stores a value in the context under the given key, useful for passing data to other handlers down the chain.
 func (ctx *Context) Set(key string, val any) {
 	if ctx.data == nil {
 		ctx.data = make(M)
@@ -95,7 +95,7 @@ func (ctx *Context) Set(key string, val any) {
 	ctx.data[key] = val
 }
 
-// WriteReader outputs the data from the passed reader with optional content-type.
+// WriteReader writes the data from the given reader to the response with an optional content-type.
 func (ctx *Context) WriteReader(contentType string, r io.Reader) (int64, error) {
 	if contentType != "" {
 		ctx.SetContentType(contentType)
@@ -104,8 +104,7 @@ func (ctx *Context) WriteReader(contentType string, r io.Reader) (int64, error) 
 	return io.Copy(ctx, r)
 }
 
-// File serves a file using http.ServeContent.
-// See http.ServeContent.
+// File serves a file using http.ServeContent. See http.ServeContent.
 func (ctx *Context) File(fp string) error {
 	ctx.hijackServeContent = true
 	http.ServeFile(ctx, ctx.Req, fp)
@@ -113,12 +112,12 @@ func (ctx *Context) File(fp string) error {
 	return nil
 }
 
-// Path is a shorthand for ctx.Req.URL.EscapedPath().
+// Path returns the escaped path of the current request.
 func (ctx *Context) Path() string {
 	return ctx.Req.URL.EscapedPath()
 }
 
-// SetContentType sets the responses's content-type.
+// SetContentType sets the response's content-type header.
 func (ctx *Context) SetContentType(typ string) {
 	if typ == "" {
 		return
@@ -127,7 +126,7 @@ func (ctx *Context) SetContentType(typ string) {
 	h.Set(contentTypeHeader, typ)
 }
 
-// ReqHeader returns the request header.
+// ReqHeader returns a request header value by key name.
 func (ctx *Context) ReqHeader(key string) string {
 	return ctx.Req.Header.Get(key)
 }
@@ -137,8 +136,7 @@ func (ctx *Context) ContentType() string {
 	return ctx.ReqHeader(contentTypeHeader)
 }
 
-// Read is a QoL shorthand for ctx.Req.Body.Read.
-// Context implements io.Reader
+// Read reads from the request body, implementing io.Reader.
 func (ctx *Context) Read(p []byte) (int, error) {
 	return ctx.Req.Body.Read(p)
 }
@@ -148,19 +146,19 @@ func (ctx *Context) CloseBody() error {
 	return ctx.Req.Body.Close()
 }
 
-// BindJSON parses the request's body as json, and closes the body.
+// BindJSON parses the request's body as JSON and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindJSON(out any) error {
 	return ctx.BindCodec(JSONCodec{}, out)
 }
 
-// BindMsgpack parses the request's body as msgpack, and closes the body.
+// BindMsgpack parses the request's body as msgpack and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) BindMsgpack(out any) error {
 	return ctx.BindCodec(MsgpCodec{}, out)
 }
 
-// BindCodec parses the request's body as msgpack, and closes the body.
+// BindCodec parses the request's body using the given codec and closes the body.
 // Note that unlike gin.Context.BindCodec, this does NOT verify the fields using special tags.
 func (ctx *Context) BindCodec(c Codec, out any) error {
 	c = genh.FirstNonZero(c, ctx.Codec, DefaultCodec)
@@ -172,7 +170,7 @@ func (ctx *Context) BindCodec(c Codec, out any) error {
 	return err
 }
 
-// Bind parses the request's body as msgpack, and closes the body.
+// Bind parses the request's body based on its content type and closes the body.
 // Note that unlike gin.Context.Bind, this does NOT verify the fields using special tags.
 func (ctx *Context) Bind(out any) error {
 	var c Codec
@@ -194,8 +192,8 @@ func (ctx *Context) Bind(out any) error {
 	return err
 }
 
-// Printf is a QoL function to handle outputting plain strings with optional fmt.Printf-style formatting.
-// calling this function marks the Context as done, meaning any returned responses won't be written out.
+// Printf writes a formatted string to the response with the given status code and content type.
+// Calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) Printf(code int, contentType, s string, args ...any) (int, error) {
 	ctx.done = true
 
@@ -212,18 +210,19 @@ func (ctx *Context) Printf(code int, contentType, s string, args ...any) (int, e
 	return fmt.Fprintf(ctx, s, args...)
 }
 
-// JSON outputs a json object, it is highly recommended to return *Response rather than use this directly.
-// calling this function marks the Context as done, meaning any returned responses won't be written out.
+// JSON encodes data as JSON and writes it to the response with the given status code.
+// Calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) JSON(code int, indent bool, v any) error {
 	return ctx.EncodeCodec(JSONCodec{indent}, code, v)
 }
 
-// Msgpack outputs a msgp object, it is highly recommended to return *Response rather than use this directly.
-// calling this function marks the Context as done, meaning any returned responses won't be written out.
+// Msgpack encodes data as msgpack and writes it to the response with the given status code.
+// Calling this function marks the Context as done, meaning any returned responses won't be written out.
 func (ctx *Context) Msgpack(code int, v any) error {
 	return ctx.EncodeCodec(MsgpCodec{}, code, v)
 }
 
+// EncodeCodec encodes data using the given codec and writes it to the response with the given status code.
 func (ctx *Context) EncodeCodec(c Codec, code int, v any) error {
 	c = genh.FirstNonZero(c, ctx.Codec, DefaultCodec)
 	ctx.done = true
@@ -235,6 +234,7 @@ func (ctx *Context) EncodeCodec(c Codec, code int, v any) error {
 	return c.Encode(ctx, v)
 }
 
+// Encode encodes data using the content type of the request and writes it to the response with the given status code.
 func (ctx *Context) Encode(code int, v any) error {
 	var c Codec
 	ct := ctx.ContentType()
@@ -256,7 +256,7 @@ func (ctx *Context) Encode(code int, v any) error {
 	return c.Encode(ctx, v)
 }
 
-// ClientIP returns the current client ip, accounting for X-Real-Ip and X-forwarded-For headers as well.
+// ClientIP returns the client's IP address, accounting for X-Real-Ip and X-Forwarded-For headers.
 func (ctx *Context) ClientIP() string {
 	h := ctx.Req.Header
 
@@ -284,30 +284,28 @@ func (ctx *Context) ClientIP() string {
 	return ""
 }
 
-// NextMiddleware is a middleware-only func to execute all the other middlewares in the group and return before the handlers.
-// will panic if called from a handler.
+// NextMiddleware executes all remaining middlewares in the group, returning before the handlers run.
+// It will panic if called from a handler.
 func (ctx *Context) NextMiddleware() {
 	if ctx.nextMW != nil {
 		ctx.nextMW()
 	}
 }
 
-// NextHandler is a func to execute all the handlers in the group up until one returns a Response.
+// NextHandler executes all remaining handlers in the group up until one returns a Response.
 func (ctx *Context) NextHandler() {
 	if ctx.next != nil {
 		ctx.next()
 	}
 }
 
-// Next is a QoL function that calls NextMiddleware() then NextHandler() if NextMiddleware() didn't return a response.
+// Next executes NextMiddleware() then NextHandler() if NextMiddleware() didn't return a response.
 func (ctx *Context) Next() {
 	ctx.NextMiddleware()
 	ctx.NextHandler()
 }
 
-// WriteHeader and Write are to implement ResponseWriter and allows ghetto hijacking of http.ServeContent errors,
-// without them we'd end up with plain text errors, we wouldn't want that, would we?
-// WriteHeader implements http.ResponseWriter
+// WriteHeader writes the HTTP status code to the response.
 func (ctx *Context) WriteHeader(s int) {
 	if ctx.status = s; ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
 		return
@@ -316,7 +314,7 @@ func (ctx *Context) WriteHeader(s int) {
 	ctx.ResponseWriter.WriteHeader(s)
 }
 
-// Write implements http.ResponseWriter
+// Write writes bytes to the response, implementing http.ResponseWriter.
 func (ctx *Context) Write(p []byte) (int, error) {
 	if ctx.hijackServeContent && ctx.status >= http.StatusBadRequest {
 		ctx.hijackServeContent = false
@@ -328,29 +326,29 @@ func (ctx *Context) Write(p []byte) (int, error) {
 	return ctx.ResponseWriter.Write(p)
 }
 
-// LimitRead limits the request body to the passed size.
+// LimitRead limits the request body to the given size.
 func (ctx *Context) LimitRead(sz int64) {
 	ctx.Req.Body = http.MaxBytesReader(ctx, ctx.Req.Body, sz)
 }
 
-// BytesWritten is the amount of bytes written from the body.
+// BytesWritten returns the number of bytes written to the response body.
 func (ctx *Context) BytesWritten() int {
 	return ctx.bytesWritten
 }
 
-// WriteString implements io.StringWriter
+// WriteString writes a string to the response, implementing io.StringWriter.
 func (ctx *Context) WriteString(p string) (int, error) {
 	return ctx.ResponseWriter.Write(otk.UnsafeBytes(p))
 }
 
-// Flush implements http.Flusher
+// Flush flushes any buffered data to the connection, implementing http.Flusher.
 func (ctx *Context) Flush() {
 	if f, ok := ctx.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-// Status returns last value written using WriteHeader.
+// Status returns the last HTTP status code written via WriteHeader.
 func (ctx *Context) Status() int {
 	if ctx.status == 0 {
 		ctx.status = http.StatusOK
@@ -359,7 +357,8 @@ func (ctx *Context) Status() int {
 	return ctx.status
 }
 
-// MultipartReader is like Request.MultipartReader but supports multipart/*, not just form-data
+// MultipartReader parses the request as a multipart body and returns a reader for its parts.
+// Unlike Request.MultipartReader, it supports multipart/* content types, not just form-data.
 func (ctx *Context) MultipartReader() (*multipart.Reader, error) {
 	req := ctx.Req
 
@@ -381,17 +380,16 @@ func (ctx *Context) MultipartReader() (*multipart.Reader, error) {
 	return multipart.NewReader(req.Body, boundary), nil
 }
 
-// Finished returns wither the context is marked as done or not.
+// Finished returns true if the context has been marked as done.
 func (ctx *Context) Finished() bool {
 	return ctx.done
 }
 
-// SetCookie sets an http-only cookie using the passed name, value and domain.
+// SetCookie sets an HTTP-only cookie with the given name, value, domain, and secure flag.
 // Returns an error if there was a problem encoding the value.
-// if forceSecure is true, it will set the Secure flag to true, otherwise it sets it based on the connection.
-// if duration == -1, it sets expires to 10 years in the past, if 0 it gets ignored (aka session-only cookie),
-// if duration > 0, the expiration date gets set to now() + duration.
-// Note that for more complex options, you can use http.SetCookie(ctx, &http.Cookie{...}).
+// If forceSecure is true, it sets the Secure flag; otherwise it sets it based on the connection (TLS).
+// If duration == -1, it sets expires to 10 years in the past. If duration == 0, it is ignored (session-only cookie).
+// If duration > 0, the expiration date is set to now() + duration.
 func (ctx *Context) SetCookie(name string, value any, domain string, forceHTTPS bool, duration time.Duration) (err error) {
 	var encValue string
 	if sc := GetSecureCookie(ctx); sc != nil {
@@ -430,7 +428,7 @@ func (ctx *Context) SetCookie(name string, value any, domain string, forceHTTPS 
 	return err
 }
 
-// RemoveCookie deletes the given cookie and sets its expires date in the past.
+// RemoveCookie deletes the given cookie by setting its expiration date in the past.
 func (ctx *Context) RemoveCookie(name string) {
 	http.SetCookie(ctx, &http.Cookie{
 		Path:     "/",
@@ -441,7 +439,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	})
 }
 
-// GetCookie returns the given cookie's value.
+// GetCookie retrieves the value of a cookie by name, returning it and whether it was found.
 func (ctx *Context) GetCookie(name string) (out string, ok bool) {
 	c, err := ctx.Req.Cookie(name)
 	if err != nil {
@@ -454,7 +452,7 @@ func (ctx *Context) GetCookie(name string) (out string, ok bool) {
 	return c.Value, true
 }
 
-// GetCookieValue unmarshals a cookie, only needed if you stored an object for the cookie not a string.
+// GetCookieValue retrieves and unmarshals a cookie value into the given destination.
 func (ctx *Context) GetCookieValue(name string, valDst any) error {
 	c, err := ctx.Req.Cookie(name)
 	if err != nil {
@@ -468,10 +466,12 @@ func (ctx *Context) GetCookieValue(name string, valDst any) error {
 	return internal.UnmarshalString(c.Value, valDst)
 }
 
+// Logf logs a formatted message using the server's logger.
 func (ctx *Context) Logf(format string, v ...any) {
 	ctx.s.logfStack(1, format, v...)
 }
 
+// LogSkipf logs a formatted message with the given skip frame offset for caller info.
 func (ctx *Context) LogSkipf(skip int, format string, v ...any) {
 	ctx.s.logfStack(skip+1, format, v...)
 }

@@ -21,6 +21,7 @@ func (fl *filteredLogger) Write(p []byte) (n int, err error) {
 	return fl.w.Write(p)
 }
 
+// FilteredLogger returns a logger that filters out log messages containing any of the given substrings.
 func FilteredLogger(flags int, msgs ...string) *log.Logger {
 	fl := &filteredLogger{w: os.Stderr}
 	for _, m := range msgs {

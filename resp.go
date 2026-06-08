@@ -13,7 +13,7 @@ import (
 	"go.oneofone.dev/otk"
 )
 
-// Common responses
+// Common responses are pre-built response values for frequent use cases.
 var (
 	RespMethodNotAllowed Response = NewJSONErrorResponse(http.StatusMethodNotAllowed).Cached()
 	RespNotFound         Response = NewJSONErrorResponse(http.StatusNotFound).Cached()
@@ -24,22 +24,23 @@ var (
 	RespPlainOK          Response = CachedResponse(http.StatusOK, "", nil)
 	RespRedirectRoot     Response = Redirect("/", false)
 
-	// Break can be returned from a handler to break a handler chain.
-	// It doesn't write anything to the connection.
-	// if you reassign this, a wild animal will devour your face.
+	// Break can be returned from a handler to break the handler chain.
+	// It does not write anything to the connection.
 	Break Response = &cachedResp{code: -1}
 )
 
-// Response represents a generic return type for http responses.
+// Response represents a generic return type for HTTP responses, with methods to determine the status code and write to the context.
 type Response interface {
 	Status() int
 	WriteToCtx(ctx *Context) error
 }
 
+// PlainResponse returns a cached response with status 200 and the given content type and body.
 func PlainResponse(contentType string, body any) Response {
 	return CachedResponse(http.StatusOK, contentType, body)
 }
 
+// CachedResponse returns a cached response with the given HTTP status code, content type, and body.
 func CachedResponse(code int, contentType string, body any) Response {
 	if body == nil && code != http.StatusNoContent {
 		body = http.StatusText(code)
@@ -69,6 +70,7 @@ func CachedResponse(code int, contentType string, body any) Response {
 	}
 }
 
+// cachedResp is an internal cached response type.
 type cachedResp struct {
 	ct   string
 	body []byte
@@ -97,8 +99,8 @@ func (r *cachedResp) MarshalMsgPack() ([]byte, error) {
 
 func (r *cachedResp) Cached() Response { return r }
 
-// ReadJSONResponse reads a response from an io.ReadCloser and closes the body.
-// dataValue is the data type you're expecting, for example:
+// ReadJSONResponse reads and decodes a JSON response from an io.ReadCloser, closing the body.
+// dataValue is the target type for the response data field, for example:
 //
 //	r, err := ReadJSONResponse(res.Body, &map[string]*Stats{})
 func ReadJSONResponse(rc io.ReadCloser, dataValue any) (r *JSONResponse, err error) {
@@ -128,6 +130,7 @@ func ReadJSONResponse(rc io.ReadCloser, dataValue any) (r *JSONResponse, err err
 	return
 }
 
+// JSONRequest makes an HTTP request and decodes the response as JSON into respData.
 func JSONRequest(method, url string, reqData, respData any) (err error) {
 	return otk.Request(method, "", url, reqData, func(r *http.Response) error {
 		_, err := ReadJSONResponse(r.Body, respData)
@@ -135,8 +138,7 @@ func JSONRequest(method, url string, reqData, respData any) (err error) {
 	})
 }
 
-// Redirect returns a redirect Response.
-// if perm is false it uses http.StatusFound (302), otherwise http.StatusMovedPermanently (302)
+// Redirect returns a redirect response, using 302 if perm is false or 301 if perm is true.
 func Redirect(url string, perm bool) Response {
 	code := http.StatusFound
 	if perm {
@@ -145,11 +147,12 @@ func Redirect(url string, perm bool) Response {
 	return RedirectWithCode(url, code)
 }
 
-// RedirectWithCode returns a redirect Response with the specified status code.
+// RedirectWithCode returns a redirect response with the specified HTTP status code.
 func RedirectWithCode(url string, code int) Response {
 	return redirResp{url, code}
 }
 
+// redirResp is an internal redirect response type.
 type redirResp struct {
 	url  string
 	code int
@@ -164,8 +167,7 @@ func (r redirResp) WriteToCtx(ctx *Context) error {
 	return nil
 }
 
-// File returns a file response.
-// example: return File("plain/html", "index.html")
+// File returns a response that serves the file at the given path with the specified content type.
 func File(contentType, fp string) Response {
 	if contentType == "" {
 		contentType = mime.TypeByExtension(filepath.Ext(fp))
@@ -173,6 +175,7 @@ func File(contentType, fp string) Response {
 	return fileResp{contentType, fp}
 }
 
+// fileResp is an internal file response type.
 type fileResp struct {
 	ct string
 	fp string
