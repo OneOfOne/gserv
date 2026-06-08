@@ -196,6 +196,29 @@ func (r *Router) DisableRoute(method, path string, disabled bool) bool {
 	return false
 }
 
+// match finds the best matching handler for the given method and path.
+// It is called internally by ServeHTTP and Match, but does not handle HEAD→GET
+// fallback — that logic lives in Match().
+//
+// The algorithm proceeds in four stages:
+//
+//  1. Prefix search — walk backwards from the end of the path to find the longest
+//     prefix that exists as a key in the method's route map. For example, given
+//     "/a/b/c", it checks "/a/b/c" → "/a/b" → "/a" → "". If no prefix matches
+//     but "/" is a key, it falls back to that.
+//
+//  2. Candidate matching — for each route under the matched prefix, determine which
+//     handler applies:
+//     • Wildcard routes (*name) always win within their group.
+//     • Exact-match routes require the number of remaining segments to equal the
+//     route's part count, with every literal segment matching verbatim.
+//     • Parameterized routes (:name) only compare the non-param segments literally;
+//     param segments are skipped during comparison.
+//
+//  3. Parameter extraction — if a route has param or wildcard parts, extract the
+//     corresponding URL segments into Params, reusing a pool-allocated wrapper.
+//
+//  4. Return — the matched Route and its extracted Params, or nil if no route matched.
 func (r *Router) match(method, path string) (rn *Route, params *paramsWrapper) {
 	m := r.getMap(method, false)
 	var (
