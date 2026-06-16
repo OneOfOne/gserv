@@ -46,8 +46,8 @@ func RateLimiter(ctx context.Context, limitKey LimitKeyFn, maxPerSecond, maxPerM
 			return nil
 		}
 
-		ds := strconv.Itoa(int(d.Seconds() + 1))
 		if setHeaders {
+			ds := strconv.Itoa(int(d.Seconds() + 1))
 			h.Set("X-Rate-Limit-Reset", ds)
 			h.Set("Retry-After", ds)
 		}
