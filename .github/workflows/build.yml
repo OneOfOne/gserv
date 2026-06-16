@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - name: Set up ${{ matrix.go-version }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@latest
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@latest
 
       - name: Test (race)
         run: go test -race ./...

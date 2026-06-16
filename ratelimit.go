@@ -168,7 +168,12 @@ func (l *Limiter) RequestsLeft() (perSecond, perMinute, perHour int64) {
 
 // NewLimiters creates a new pool of rate limiters with the given limits per second, minute, and hour.
 func NewLimiters(ctx context.Context, maxPerSecond, maxPerMinute, maxPerHour int) *Limiters {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	ls := &Limiters{
+		ctx:          ctx,
 		maxPerSecond: maxPerSecond,
 		maxPerMinute: maxPerMinute,
 		maxPerHour:   maxPerHour,
