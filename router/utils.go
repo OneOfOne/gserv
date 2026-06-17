@@ -54,8 +54,7 @@ func splitPathToParts(p string) (pp string, rest []nodePart, num, stars int) {
 }
 
 func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) bool {
-	var pi, last int
-	var ss string
+	pi, last := 0, 0
 	for i := 0; i < len(s); i++ {
 		if s[i] != sep {
 			if i < len(s)-1 {
@@ -64,8 +63,8 @@ func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) boo
 			i = len(s)
 		}
 
-		if ss = s[last:i]; ss != "" {
-			if fn(ss, pi, i) {
+		if last < i {
+			if fn(s[last:i], pi, i) {
 				return true
 			}
 			last = i
