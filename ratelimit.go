@@ -26,6 +26,7 @@ func RateLimiter(ctx context.Context, limitKey LimitKeyFn, maxPerSecond, maxPerM
 			return ctx.ClientIP()
 		}
 	}
+
 	return func(ctx *Context) Response {
 		var (
 			key = limitKey(ctx)
