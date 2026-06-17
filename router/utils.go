@@ -54,7 +54,9 @@ func splitPathToParts(p string) (pp string, rest []nodePart, num, stars int) {
 }
 
 func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) bool {
-	for i, pi, last := 0, 0, 0; i < len(s); i++ {
+	var pi, last int
+	var ss string
+	for i := 0; i < len(s); i++ {
 		if s[i] != sep {
 			if i < len(s)-1 {
 				continue
@@ -62,7 +64,7 @@ func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) boo
 			i = len(s)
 		}
 
-		if ss := s[last:i]; ss != "" {
+		if ss = s[last:i]; ss != "" {
 			if fn(ss, pi, i) {
 				return true
 			}
@@ -75,11 +77,13 @@ func splitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) boo
 }
 
 func revSplitPathFn(s string, sep uint8, fn func(p string, pidx, idx int) bool) bool {
-	for i, pi, last := len(s)-1, 0, len(s); i > -1; i-- {
+	pi, last := 0, len(s)
+	var ss string
+	for i := len(s) - 1; i > -1; i-- {
 		if s[i] != sep {
 			continue
 		}
-		if ss := s[i:last]; ss != "" {
+		if ss = s[i:last]; ss != "" {
 			if fn(ss, pi, last) {
 				return true
 			}
@@ -223,7 +227,7 @@ func bufApp(buf *[]byte, s string, w int, c byte) {
 	(*buf)[w] = c
 }
 
-var routeCtxKey = struct{}{}
+var routeCtxKey = struct{ int }{420}
 
 func RouteFromRequest(r *http.Request) *Route {
 	rn, _ := r.Context().Value(routeCtxKey).(*Route)
